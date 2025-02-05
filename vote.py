@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 import numpy as np
 import tensorflow as tf 
 import random
+import csv
+import itertools
 
 # Global variables to store user inputs
 voting_scheme = None
@@ -72,6 +74,10 @@ def second_screen(root):
 
     instructions = tk.Label(root, text=f"Indicate your preference by entering a single letter for each candidate:{candidate_letters}", font=("Helvetica", 14))
     instructions.pack(pady=10)
+
+    if selected_limitation:
+        limitation_label = tk.Label(root, text=f"The limitation dropped was:{selected_limitation}", font=("Helvetica", 14))
+        limitation_label.pack(pady=10)
     
     matrix_frame = tk.Frame(root)
     matrix_frame.pack(pady=10)
@@ -86,10 +92,7 @@ def second_screen(root):
     # Create matrix of Entry widgets
     for i in range(num_voters):
         row_entries = []
-        if i == 0 and not selected_limitation: # for the case that there is no removed limitation
-            voter_label = tk.Label(matrix_frame, text=f"Voter {i + 1} (You)")
-        else:
-            voter_label = tk.Label(matrix_frame, text=f"Voter {i + 1}")
+        voter_label = tk.Label(matrix_frame, text=f"Voter {i + 1}")
         voter_label.grid(row=i+1, column=0, padx=5, pady=5)
         for j in range(num_candidates):
             entry = tk.Entry(matrix_frame, width=2, justify='center')
@@ -139,21 +142,26 @@ def second_screen(root):
     random_button.pack(pady=10)
     
     # Back button, should ne in the right side of the next button
-    back_button = tk.Button(root, text="Back", command=lambda: go_back())
+    back_button = tk.Button(root, text="Back", command=go_back)
     back_button.pack(pady=10)
     
     # Next button
     next_button = tk.Button(root, text="Next", command=validate_and_next)
-    next_button.pack(pady=20)
+    next_button.pack(pady=10)
+
+    # back and next should be next to each other
+
+    
 
 def third_screen(root):
     """Display the fourth screen with placeholders for the required outputs."""
     clear_screen(root)
 
-    out1 = output1(preferences)
-    out2 = output2(out1, preferences)
+    out1 = output1(voting_scheme,preferences)
+    # out2 = output2(out1, preferences)
+    out2 = output2(preferences, out1)
     out3 = output3(out2)
-    out4 = output4(out1, preferences)
+    out4 = output4(voting_scheme,out1, preferences, out2)
     out5 = output5()
 
     outputs = [
@@ -172,7 +180,36 @@ def third_screen(root):
     back_button = tk.Button(root, text="Back", command=lambda: second_screen(root))
     back_button.pack(pady=10)
 
-def output1(preferences):
+def run_experiment(voting_scheme):
+    # create random preferences list with random numbers of voters and candidates
+    num_voters = random.randint(2, 10)
+    num_candidates = random.randint(2, 10)
+    preferences1 = []
+    for _ in range(num_voters): # number should be letters
+        preferences1.append(random.sample([chr(65 + i) for i in range(num_candidates)], num_candidates))
+    print(preferences1)
+    out1 = output1(voting_scheme,preferences1) # outcome
+    # out2 = output2(out1, preferences1) # happiness level of each voter
+    out2 = output2(preferences1, out1) # happiness level of each voter
+    out3 = output3(out2) # sum of happiness levels
+    out4 = output4(voting_scheme, out1, preferences1, out2) # strategic voting options per user
+    out5 = output5() # risk of strategic voting
+    
+    # Write outputs to a CSV file
+    csv_filename = "experiment_results.csv"
+    headers = ["outcome", "happiness_levels", "total_happiness", "strategic_voting_options", "risk_of_strategic_voting"]
+    try:
+        with open(csv_filename, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            # Write headers if the file is empty
+            if file.tell() == 0:
+                writer.writerow(headers)
+            writer.writerow([out1, out2, out3, out4, out5])
+    except Exception as e:
+        print(f"Error writing to CSV file: {e}")
+
+
+def output1(voting_scheme,preferences):
     """Display the first output."""
     # clear_screen(root)
     outcome = {}
@@ -214,27 +251,56 @@ def output1(preferences):
                     outcome[candidate] = num_candidates - i - 1
     # order the outcome by number of votes
     outcome = dict(sorted(outcome.items(), key=lambda x: x[1], reverse=True))
-    print("Number of voters: ", num_voters)
-    print("Number of candidates: ", num_candidates)
-    print("Preferences: ", preferences)
-    print("Outcome: ", outcome)
+    # print("Number of voters: ", num_voters)
+    # print("Number of candidates: ", num_candidates)
+    # print("Preferences: ", preferences)
+    # print("Outcome: ", outcome)
     return outcome
 
-def output2(outcome, preferences):
-    """Display the second output."""
-    hapiness_list = []
-    winner = None
-    # look for the candiadate with the most votes and store it as the winner
-    # Outcome:  {'A': 2, 'B': 2, 'C': 2}
-    for candidate, votes in outcome.items():
-        if winner is None or votes > outcome[winner]:
-            winner = candidate
+# def output2(outcome, preferences):
+#     """Display the second output."""
+#     hapiness_list = []
+#     winner = None
+#     # look for the candiadate with the most votes and store it as the winner
+#     # Outcome:  {'A': 2, 'B': 2, 'C': 2}
+#     for candidate, votes in outcome.items():
+#         if winner is None or votes > outcome[winner]:
+#             winner = candidate
     
-    # calculate the happiness level of each voter
-    for preference in preferences:
-        hapiness_list.append(round(1 - (preference.index(winner) / (num_candidates - 1)), 2))
+#     # calculate the happiness level of each voter
+#     for preference in preferences:
+#         hapiness_list.append(round(1 - (preference.index(winner) / (num_candidates - 1)), 2))
 
-    return hapiness_list
+#     return hapiness_list
+
+# LAURANT CODE
+def create_symmetric_array(n):
+    if n < 1:
+        return []
+    first_half = list(range(n, 0, -2))
+    second_half = first_half[::-1]
+    if len(first_half) + len(second_half) > n:
+        second_half = second_half[1:]
+    return first_half + second_half
+def output2(preferences, final_ranking): #https://link.springer.com/chapter/10.1007/978-3-322-80613-0_7
+    # final_ranking is a map, change final ranking into an array containing the keys of the map
+    final_ranking_array = list(final_ranking.keys())
+    n = len(final_ranking)  # Number of candidates
+    happiness_scores = []
+    array = create_symmetric_array(n) # get the weight array
+    max_score = sum(x * n for x in array) # Max score
+
+    for voter in preferences:
+        if(voter[0]==final_ranking_array[0]):
+            pos_score = max_score
+        else:
+          # Compute Positional Satisfaction Score
+          pos_score = sum(array[i]*(n - abs(voter.index(c) - final_ranking_array.index(c))) for i, c in enumerate(voter))
+
+        happiness = pos_score/max_score # Normalization step
+        happiness_scores.append(happiness)
+
+    return happiness_scores
 
 def output3(hapiness_list):
     """Display the third output."""
@@ -242,40 +308,29 @@ def output3(hapiness_list):
 
 import copy
 
-def output4(outcome, preferences):
+def output4(voting_scheme, outcome, preferences, hapiness_list):
     """Return a list of strategic voting options for each voter that increases their happiness level."""
-    
-    # Find the winner based on the highest Borda score
-    winner = max(outcome, key=outcome.get)
-    
+
+    candidate_letters = [chr(65 + i) for i in range(num_candidates)]
+    all_permutations = list(itertools.permutations(candidate_letters))
+
     strategic_options = []
-    
-    for voter_index, preference in enumerate(preferences):
-        original_happiness = 1 - (preference.index(winner) / (num_candidates - 1))
-        best_strategic_votes = []
-        
-        # Generate all possible strategic votes by swapping positions in the preference list
-        for i in range(len(preference)):
-            for j in range(i + 1, len(preference)):
-                new_preference = preference[:]
-                new_preference[i], new_preference[j] = new_preference[j], new_preference[i]  # Swap candidates
-                
-                # Simulate new outcome with the modified vote
-                new_preferences = copy.deepcopy(preferences)
-                new_preferences[voter_index] = new_preference
-                new_outcome = output1(new_preferences)
-                
-                # Calculate new happiness
-                new_winner = max(new_outcome, key=new_outcome.get)
-                new_happiness = 1 - (new_preference.index(new_winner) / (num_candidates - 1))
-                
-                # If new happiness is greater than original, add this as a strategic vote
-                if new_happiness > original_happiness:
-                    best_strategic_votes.append(new_preference)
-        
-        strategic_options.append((voter_index, best_strategic_votes))
+
+    for i in range(num_voters):
+        for permutation in all_permutations:
+            # remove the preference at index i and replace it with perm
+            new_preferences = copy.deepcopy(preferences)
+            new_preferences[i] = list(permutation)
+            new_outcome = output1(voting_scheme,new_preferences)
+            # new_hapiness_list = output2(new_outcome, preferences)
+            new_hapiness_list = output2(preferences, new_outcome)
+            if new_hapiness_list[i] > hapiness_list[i]:
+                print("original hapiness: ", hapiness_list[i], "new hapiness: ", new_hapiness_list[i])
+                strategic_options.append((i, new_preferences[i]))
     
     return strategic_options
+
+# ABDC ADBC for voter 2
 
 def output5():
     """Display the fifth output."""
@@ -292,6 +347,11 @@ def main():
     root.geometry("800x600")
     start_screen(root)
     root.mainloop()
+
+# def main():
+#     for i in range(10):
+#         run_experiment("Borda")
+
 
 if __name__ == "__main__":
     main()
