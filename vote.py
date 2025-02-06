@@ -154,65 +154,72 @@ def second_screen(root):
     
 
 def third_screen(root):
-    """Display the fourth screen with placeholders for the required outputs."""
+    """Display the fourth screen with formatted outputs in a scrollable panel."""
     clear_screen(root)
 
-    out1 = output1(voting_scheme,preferences)
-    # out2 = output2(out1, preferences)
+    canvas = tk.Canvas(root)
+    scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas)
+
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    out1 = output1(voting_scheme, preferences)
     out2 = output2(preferences, out1)
     out3 = output3(out2)
-    out4 = output4(voting_scheme,out1, preferences, out2)
+    out4 = output4(voting_scheme, out1, preferences, out2)
     out5 = output5()
-
-    outputs = [
-        f"Non-strategic voting outcome: {out1}",
-        f"Happiness level of each voter: {out2}",
-        f"Overall happiness level: {out3}",
-        f"Set of strategic voting options for each user: {out4}",
-        f"Overall risk of strategic voting: {out5}"
-    ]
     
-    for output in outputs:
-        label = tk.Label(root, text=output, font=("Helvetica", 12))
-        label.pack(pady=5)
-
-    # Back button, should ne in the right side of the next button
+    # Display formatted outputs
+    tk.Label(scrollable_frame, text="Non-strategic voting outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(out1), font=("Helvetica", 12)).pack(pady=5)
+    
+    tk.Label(scrollable_frame, text="Happiness level of each voter:", font=("Helvetica", 12, "bold")).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(out2), font=("Helvetica", 12)).pack(pady=5)
+    
+    tk.Label(scrollable_frame, text="Overall happiness level:", font=("Helvetica", 12, "bold")).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(out3), font=("Helvetica", 12)).pack(pady=5)
+    
+    tk.Label(scrollable_frame, text="Set of strategic voting options for each user:", font=("Helvetica", 12, "bold")).pack(pady=5)
+    for voter in out4:
+        tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
+        for option in voter['Strategic Options']:
+            tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
+            tk.Label(scrollable_frame, text=f"New Outcome: {option[1]}", font=("Helvetica", 12)).pack()
+            tk.Label(scrollable_frame, text=f"New Happiness: {option[2]}", font=("Helvetica", 12)).pack()
+            tk.Label(scrollable_frame, text=f"Original Happiness: {option[3]}", font=("Helvetica", 12)).pack()
+            tk.Label(scrollable_frame, text=f"Total New Happiness: {option[4]}", font=("Helvetica", 12)).pack()
+            tk.Label(scrollable_frame, text=f"Total Original Happiness: {option[5]}", font=("Helvetica", 12)).pack()
+            tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
+    
+    tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(out5), font=("Helvetica", 12)).pack(pady=5)
+    
+    # Back button
     back_button = tk.Button(root, text="Back", command=lambda: second_screen(root))
-    back_button.pack(pady=10)
-
-def run_experiment(voting_scheme):
-    # create random preferences list with random numbers of voters and candidates
-    num_voters = random.randint(2, 10)
-    num_candidates = random.randint(2, 10)
-    preferences1 = []
-    for _ in range(num_voters): # number should be letters
-        preferences1.append(random.sample([chr(65 + i) for i in range(num_candidates)], num_candidates))
-    print(preferences1)
-    out1 = output1(voting_scheme,preferences1) # outcome
-    # out2 = output2(out1, preferences1) # happiness level of each voter
-    out2 = output2(preferences1, out1) # happiness level of each voter
-    out3 = output3(out2) # sum of happiness levels
-    out4 = output4(voting_scheme, out1, preferences1, out2) # strategic voting options per user
-    out5 = output5() # risk of strategic voting
+    back_button.pack(side="bottom")
     
-    # Write outputs to a CSV file
-    csv_filename = "experiment_results.csv"
-    headers = ["outcome", "happiness_levels", "total_happiness", "strategic_voting_options", "risk_of_strategic_voting"]
-    try:
-        with open(csv_filename, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            # Write headers if the file is empty
-            if file.tell() == 0:
-                writer.writerow(headers)
-            writer.writerow([out1, out2, out3, out4, out5])
-    except Exception as e:
-        print(f"Error writing to CSV file: {e}")
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+    # scrollable_frame.pack(side="right", expand=True)
 
 
 def output1(voting_scheme,preferences):
     """Display the first output."""
     # clear_screen(root)
+    # create an outcome dictionary with all letter (as much as num_candidates) and set their values to 0
     outcome = {}
+    num_candidates = len(preferences[0])
+    for i in range(num_candidates):
+        outcome[chr(65 + i)] = 0
+
     if voting_scheme == "Plurality":
         for preference in preferences:
             # give 1 point to each candidate in first position of each preference list
@@ -297,7 +304,7 @@ def output2(preferences, final_ranking): #https://link.springer.com/chapter/10.1
           # Compute Positional Satisfaction Score
           pos_score = sum(array[i]*(n - abs(voter.index(c) - final_ranking_array.index(c))) for i, c in enumerate(voter))
 
-        happiness = pos_score/max_score # Normalization step
+        happiness = round(pos_score/max_score,2) # Normalization step
         happiness_scores.append(happiness)
 
     return happiness_scores
@@ -309,25 +316,32 @@ def output3(hapiness_list):
 import copy
 
 def output4(voting_scheme, outcome, preferences, hapiness_list):
-    """Return a list of strategic voting options for each voter that increases their happiness level."""
-
+    """Return a structured list of strategic voting options for each voter that increases their happiness level."""
     candidate_letters = [chr(65 + i) for i in range(num_candidates)]
     all_permutations = list(itertools.permutations(candidate_letters))
 
     strategic_options = []
 
     for i in range(num_voters):
+        voter_strategic_options = []
         for permutation in all_permutations:
-            # remove the preference at index i and replace it with perm
             new_preferences = copy.deepcopy(preferences)
             new_preferences[i] = list(permutation)
-            new_outcome = output1(voting_scheme,new_preferences)
-            # new_hapiness_list = output2(new_outcome, preferences)
-            new_hapiness_list = output2(preferences, new_outcome)
+            new_outcome = output1(voting_scheme, new_preferences)
+            new_hapiness_list = output2(new_preferences, new_outcome)
             if new_hapiness_list[i] > hapiness_list[i]:
-                print("original hapiness: ", hapiness_list[i], "new hapiness: ", new_hapiness_list[i])
-                strategic_options.append((i, new_preferences[i]))
-    
+                voter_strategic_options.append((
+                    new_preferences[i],
+                    new_outcome,
+                    new_hapiness_list[i],
+                    hapiness_list[i],
+                    float(np.sum(new_hapiness_list)),
+                    float(np.sum(hapiness_list))
+                ))
+        strategic_options.append({
+            "Voter": i+1,
+            "Strategic Options": voter_strategic_options
+        })
     return strategic_options
 
 # ABDC ADBC for voter 2
