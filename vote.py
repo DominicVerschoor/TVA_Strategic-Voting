@@ -5,6 +5,7 @@ import tensorflow as tf
 import random
 import csv
 import itertools
+from itertools import permutations
 
 # Global variables to store user inputs
 voting_scheme = None
@@ -175,7 +176,7 @@ def third_screen(root):
     out2 = output2(preferences, out1)
     out3 = output3(out2)
     out4 = output4(voting_scheme, out1, preferences, out2)
-    out5 = output5()
+    out5 = output5(preferences, out1, p_pivot=0.01)
     
     # Display formatted outputs
     tk.Label(scrollable_frame, text="Non-strategic voting outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
@@ -349,6 +350,40 @@ def output4(voting_scheme, outcome, preferences, hapiness_list):
 def output5():
     """Display the fifth output."""
     return ""
+
+def ranking_utility(pref, outcome_ranking):
+    N = len(pref)
+    # Convert the voter's preference into a dict: candidate -> preference rank
+    # e.g., for pref = ['A','B','C','D']: rank['A'] = 0, rank['B'] = 1, ...
+    rank = {candidate: i for i, candidate in enumerate(pref)}
+    total_value = 0
+    for j, candidate in enumerate(outcome_ranking):
+        # Voter's liking for candidate c
+        liking = (N - 1) - rank[candidate]
+        # Weight for position j
+        pos_weight = (N - 1) - j
+        total_value += liking * pos_weight
+    return total_value
+
+def output5(preferences, final_ranking, p_pivot=0.01):
+
+    final_ranking_array = list(final_ranking.keys())
+
+    candidates = final_ranking_array[:]
+    all_perms = list(permutations(candidates))
+
+    risks = []
+    for pref in preferences:
+        # Utility for the official final ranking
+        u_final = ranking_utility(pref, final_ranking_array)
+        # Find the max utility among all permutations
+        best_u = max(ranking_utility(pref, p) for p in all_perms)
+        # The potential gain is best_u - u_final
+        gain = best_u - u_final
+        # Multiply by pivot probability
+        risk = gain * p_pivot
+        risks.append(risk)
+    return risks
 
 def clear_screen(root):
     """Remove all widgets from the root window."""
