@@ -6,6 +6,7 @@ import random
 import csv
 import itertools
 from itertools import permutations
+import os
 
 # Global variables to store user inputs
 voting_scheme = None
@@ -175,7 +176,7 @@ def third_screen(root):
     out1 = output1(voting_scheme, preferences)
     out2 = output2(preferences, out1)
     out3 = output3(out2)
-    out4 = output4(voting_scheme, out1, preferences, out2)
+    out4 = output4(voting_scheme, out1, preferences, out2, num_voters, num_candidates)
     out5 = output5(preferences, out1, p_pivot=0.01)
     
     # Display formatted outputs
@@ -316,7 +317,7 @@ def output3(hapiness_list):
 
 import copy
 
-def output4(voting_scheme, outcome, preferences, hapiness_list):
+def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
     """Return a structured list of strategic voting options for each voter that increases their happiness level."""
     candidate_letters = [chr(65 + i) for i in range(num_candidates)]
     all_permutations = list(itertools.permutations(candidate_letters))
@@ -343,13 +344,8 @@ def output4(voting_scheme, outcome, preferences, hapiness_list):
             "Voter": i+1,
             "Strategic Options": voter_strategic_options
         })
+        # print(strategic_options)
     return strategic_options
-
-# ABDC ADBC for voter 2
-
-def output5():
-    """Display the fifth output."""
-    return ""
 
 def ranking_utility(pref, outcome_ranking):
     N = len(pref)
@@ -390,16 +386,82 @@ def clear_screen(root):
     for widget in root.winfo_children():
         widget.destroy()
 
-def main():
-    root = tk.Tk()
-    root.title("Voting System")
-    root.geometry("800x600")
-    start_screen(root)
-    root.mainloop()
+
+# EXPERIMENT CODE ----------------------------------------------------------------
+
+def run_experiment(voting_scheme, count):
+    # Generate random numbers of voters and candidates
+    for _ in range(count):
+        # num_voters = random.randint(3, 10)
+        # num_candidates = random.randint(3, 10)
+
+        num_voters = 5
+        num_candidates = 4
+
+        # Create random list preferences that stores num_voters preferences of size num_candidates
+        preferences = []
+        for _ in range(num_voters):
+            preferences.append(random.sample([chr(i) for i in range(65, 65 + num_candidates)], num_candidates))
+
+        # Compute outputs
+        out1 = output1(voting_scheme, preferences)  # Outcome
+        out2 = output2(preferences, out1)  # Happiness list
+        out3 = output3(out2)  # Overall happiness
+        out4 = output4(voting_scheme, out1, preferences, out2, num_voters, num_candidates)  # Strategic voting details
+        out5 = output5(preferences, out1, p_pivot=0.01)  # Overall risk
+
+        # Define the output file
+        filename = "output_votes.csv"
+
+        # Check if file exists, if not, create it with headers
+        file_exists = os.path.isfile(filename)
+
+        with open(filename, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+
+            # Write header if the file is newly created
+            if not file_exists:
+                writer.writerow(["voting_scheme", "outcome", "happiness_list","overall_happiness", "strategic_voting", "overall_risk"])
+
+            # Flatten strategic voting details for better CSV structure
+            strategic_voting_flat = []
+            for voter in out4:
+                voter_id = voter['Voter']
+                for option in voter['Strategic Options']:
+                    strategic_voting_flat.append({
+                        "Voter": voter_id,
+                        "Modified Preference": option[0],
+                        "New Outcome": option[1],
+                        "New Happiness": option[2],
+                        "Original Happiness": option[3],
+                        "Total New Happiness": option[4],
+                        "Total Original Happiness": option[5]
+                    })
+
+            # Convert strategic voting details into a string format
+            strategic_voting_str = "; ".join(
+                [f"Voter {v['Voter']}: Pref {v['Modified Preference']}, "
+                f"New Out {v['New Outcome']}, New Hap {v['New Happiness']}, "
+                f"Orig Hap {v['Original Happiness']}, "
+                f"Total New Hap {v['Total New Happiness']}, "
+                f"Total Orig Hap {v['Total Original Happiness']}"
+                for v in strategic_voting_flat]
+            )
+
+            # Write data to CSV
+            writer.writerow([voting_scheme, out1, out2, out3, strategic_voting_str, out5])
+
 
 # def main():
-#     for i in range(10):
-#         run_experiment("Borda")
+#     root = tk.Tk()
+#     root.title("Voting System")
+#     root.geometry("800x600")
+#     start_screen(root)
+#     root.mainloop()
+
+def main():
+    for i in range(10):
+        run_experiment("Borda", 1)
 
 
 if __name__ == "__main__":
