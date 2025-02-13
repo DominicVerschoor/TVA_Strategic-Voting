@@ -332,6 +332,7 @@ def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_
             new_outcome = output1(voting_scheme, new_preferences)
             new_hapiness_list = output2(new_preferences, new_outcome)
             if new_hapiness_list[i] > hapiness_list[i]:
+                print(classify_strategic_vote(preferences[i], new_preferences[i]))
                 voter_strategic_options.append((
                     new_preferences[i],
                     new_outcome,
@@ -380,6 +381,33 @@ def output5(preferences, final_ranking, p_pivot=0.01):
         risk = gain * p_pivot
         risks.append(risk)
     return risks
+
+def classify_strategic_vote(honest_vote, strategic_vote):
+    
+    # Identify the top choice in both votes
+    honest_top = honest_vote[0]
+    strategic_top = strategic_vote[0]
+
+    # Check for Bullet Voting (if only the top choice is unchanged & others are rearranged randomly)
+    if strategic_top == honest_top and sorted(strategic_vote[1:]) == sorted(honest_vote[1:]):
+        return "Bullet Voting"
+    
+    # Identify which candidates moved up or down in ranking
+    ranking_changes = {candidate: strategic_vote.index(candidate) - honest_vote.index(candidate) for candidate in honest_vote}
+
+    # Check for Compromising (Top choice is moved down to boost another candidate)
+    if honest_top != strategic_top:
+        return "Compromising"
+
+    # Check for Burying (A competitor is moved significantly lower)
+    for candidate, change in ranking_changes.items():
+        if change < 0:  # Candidate moved up in ranking
+            for weaker_candidate in honest_vote[honest_vote.index(candidate) + 1:]:
+                if ranking_changes[weaker_candidate] > 0:  # A lower-ranked candidate was pushed down
+                    return "Burying"
+
+    return "Unknown"
+
 
 def clear_screen(root):
     """Remove all widgets from the root window."""
@@ -452,16 +480,16 @@ def run_experiment(voting_scheme, count):
             writer.writerow([voting_scheme, out1, out2, out3, strategic_voting_str, out5])
 
 
-# def main():
-#     root = tk.Tk()
-#     root.title("Voting System")
-#     root.geometry("800x600")
-#     start_screen(root)
-#     root.mainloop()
-
 def main():
-    for i in range(10):
-        run_experiment("Borda", 1)
+    root = tk.Tk()
+    root.title("Voting System")
+    root.geometry("800x600")
+    start_screen(root)
+    root.mainloop()
+
+# def main():
+#     for i in range(10):
+#         run_experiment("Borda", 1)
 
 
 if __name__ == "__main__":
