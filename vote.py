@@ -11,9 +11,11 @@ import os
 # Global variables to store user inputs
 voting_scheme = None
 selected_limitation = None
+atva_mode = None
 num_voters = 0
 num_candidates = 0
 preferences = []
+pairs = {} # meant for the pairs that collaborated or retailated, can be empty in case of no voters found or BTVA/ATVA not concerned
 
 def clear_screen(root):
     for widget in root.winfo_children():
@@ -34,10 +36,10 @@ def start_screen(root):
     scheme_menu.pack(pady=5)
     
     # Limitation selection
-    limitations = ["Voter Collusion", "Counter-Strategic Voting", "Perfect Knowledge", "Tactical Voting by a Single Voter"]
+    limitations = {"Voter Collusion":"ATVA_1", "Counter-Strategic Voting":"ATVA_2", "Perfect Knowledge":"ATVA_3", "Tactical Voting by a Single Voter":"ATVA_4"}
     tk.Label(root, text="Select a limitation to drop:").pack(pady=5)
     limitation_var = tk.StringVar()
-    limitation_menu = ttk.Combobox(root, textvariable=limitation_var, values=limitations, state="readonly")
+    limitation_menu = ttk.Combobox(root, textvariable=limitation_var, values=list(limitations.keys()), state="readonly")
     limitation_menu.pack(pady=5)
     
     # Number of voters
@@ -55,6 +57,8 @@ def start_screen(root):
         try:
             voting_scheme = scheme_var.get()
             selected_limitation = limitation_var.get()
+            atva_mode = limitations[selected_limitation] if selected_limitation else None
+            print(atva_mode)
             num_voters = int(voters_entry.get())
             num_candidates = int(candidates_entry.get())
             if voting_scheme and num_voters > 1 and num_candidates > 1:
@@ -173,24 +177,24 @@ def third_screen(root):
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
 
-    out1 = output1(voting_scheme, preferences)
-    out2 = output2(preferences, out1)
-    out3 = output3(out2)
-    out4 = output4(voting_scheme, out1, preferences, out2, num_voters, num_candidates)
-    out5 = output5(preferences, out1, p_pivot=0.01)
+    outcome = output1(voting_scheme, preferences)
+    hapiness_list = output2(preferences, outcome)
+    overall_hapiness = output3(hapiness_list)
+    strategic_votes_list = output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+    risk = output5(preferences, outcome, p_pivot=0.01)
     
     # Display formatted outputs
     tk.Label(scrollable_frame, text="Non-strategic voting outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(out1), font=("Helvetica", 12)).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(outcome), font=("Helvetica", 12)).pack(pady=5)
     
     tk.Label(scrollable_frame, text="Happiness level of each voter:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(out2), font=("Helvetica", 12)).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(hapiness_list), font=("Helvetica", 12)).pack(pady=5)
     
     tk.Label(scrollable_frame, text="Overall happiness level:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(out3), font=("Helvetica", 12)).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(overall_hapiness), font=("Helvetica", 12)).pack(pady=5)
     
     tk.Label(scrollable_frame, text="Set of strategic voting options for each user:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    for voter in out4:
+    for voter in strategic_votes_list:
         tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
         for option in voter['Strategic Options']:
             tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
@@ -202,7 +206,7 @@ def third_screen(root):
             tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
     
     tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(out5), font=("Helvetica", 12)).pack(pady=5)
+    tk.Label(scrollable_frame, text=str(risk), font=("Helvetica", 12)).pack(pady=5)
     
     # Back button
     back_button = tk.Button(root, text="Back", command=lambda: second_screen(root))
@@ -341,10 +345,11 @@ def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_
                     float(np.sum(new_hapiness_list)),
                     float(np.sum(hapiness_list))
                 ))
-        strategic_options.append({
-            "Voter": i+1,
-            "Strategic Options": voter_strategic_options
-        })
+        if len(voter_strategic_options) != 0:
+            strategic_options.append({
+                "Voter": i+1,
+                "Strategic Options": voter_strategic_options
+            })
         # print(strategic_options)
     return strategic_options
 
@@ -417,7 +422,7 @@ def clear_screen(root):
 
 # EXPERIMENT CODE ----------------------------------------------------------------
 
-def run_experiment(voting_scheme, count):
+def run_experiment(voting_scheme, atva_mode, count):
     # Generate random numbers of voters and candidates
     for _ in range(count):
         # num_voters = random.randint(3, 10)
@@ -432,64 +437,62 @@ def run_experiment(voting_scheme, count):
             preferences.append(random.sample([chr(i) for i in range(65, 65 + num_candidates)], num_candidates))
 
         # Compute outputs
-        out1 = output1(voting_scheme, preferences)  # Outcome
-        out2 = output2(preferences, out1)  # Happiness list
-        out3 = output3(out2)  # Overall happiness
-        out4 = output4(voting_scheme, out1, preferences, out2, num_voters, num_candidates)  # Strategic voting details
-        out5 = output5(preferences, out1, p_pivot=0.01)  # Overall risk
+        outcome = output1(voting_scheme, preferences)  # Outcome
+        hapiness_list = output2(preferences, outcome)  # Happiness list
+        overall_hapiness = output3(hapiness_list)  # Overall happiness
+        strategic_votes_list = output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)  # list of the form: {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
+        risk = output5(preferences, outcome, p_pivot=0.01)  # Overall risk
 
-        # Define the output file
-        filename = "output_votes.csv"
+        # get a unique list of voter id from {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
+        strategic_voters = [voter["Voter"] for voter in strategic_votes_list]
 
-        # Check if file exists, if not, create it with headers
-        file_exists = os.path.isfile(filename)
+        file1 = "outcome_results.csv"
+        file2 = "strategic_voting_results.csv"
 
-        with open(filename, 'a', newline='') as csvfile:
+        vote_id = 0
+
+        # Write outcome results to CSV
+        file1_exists = os.path.isfile(file1)
+        file2_exists = os.path.isfile(file2)
+
+        with open(file1, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
+            if not file1_exists:
+                writer.writerow(["vote_id", "voting_scheme", "limitation_dropped", "num_voters", "num_candidates", "outcome", "hapiness_list", "overall_hapiness", "strategic_voters", "risk_of_strategic_voting", "pairs"])
+            
+            if file1_exists:
+                # read last row
+                with open(file1, 'r') as f:
+                    reader = csv.reader(f)
+                    data = list(reader)
+                    last_row = data[-1]
+                    vote_id = int(last_row[0])
+                    vote_id += 1
+            
+            writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, pairs])
 
-            # Write header if the file is newly created
-            if not file_exists:
-                writer.writerow(["voting_scheme", "outcome", "happiness_list","overall_happiness", "strategic_voting", "overall_risk"])
+        # Write strategic voting results to CSV
+        with open(file2, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            if not file2_exists:
+                writer.writerow(["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"])
 
-            # Flatten strategic voting details for better CSV structure
-            strategic_voting_flat = []
-            for voter in out4:
-                voter_id = voter['Voter']
-                for option in voter['Strategic Options']:
-                    strategic_voting_flat.append({
-                        "Voter": voter_id,
-                        "Modified Preference": option[0],
-                        "New Outcome": option[1],
-                        "New Happiness": option[2],
-                        "Original Happiness": option[3],
-                        "Total New Happiness": option[4],
-                        "Total Original Happiness": option[5]
-                    })
+            for voter in strategic_votes_list:
+                voter_id = voter["Voter"]
+                for strategy in voter["Strategic Options"]:
+                    print(strategy[0])
+                    writer.writerow([vote_id, voter_id, preferences[voter_id-1], strategy[3], strategy[0], strategy[1], strategy[2], strategy[4]])
 
-            # Convert strategic voting details into a string format
-            strategic_voting_str = "; ".join(
-                [f"Voter {v['Voter']}: Pref {v['Modified Preference']}, "
-                f"New Out {v['New Outcome']}, New Hap {v['New Happiness']}, "
-                f"Orig Hap {v['Original Happiness']}, "
-                f"Total New Hap {v['Total New Happiness']}, "
-                f"Total Orig Hap {v['Total Original Happiness']}"
-                for v in strategic_voting_flat]
-            )
-
-            # Write data to CSV
-            writer.writerow([voting_scheme, out1, out2, out3, strategic_voting_str, out5])
-
-
-def main():
-    root = tk.Tk()
-    root.title("Voting System")
-    root.geometry("800x600")
-    start_screen(root)
-    root.mainloop()
 
 # def main():
-#     for i in range(10):
-#         run_experiment("Borda", 1)
+#     root = tk.Tk()
+#     root.title("Voting System")
+#     root.geometry("800x600")
+#     start_screen(root)
+#     root.mainloop()
+
+def main():
+    run_experiment("Borda", "ATVA_1", 1)
 
 
 if __name__ == "__main__":

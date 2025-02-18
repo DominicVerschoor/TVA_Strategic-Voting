@@ -1,0 +1,32 @@
+Idea for the structure of the experiments
+
+2 csv files
+
+outcome_results.csv: 
+
+the first file should give the overall information of the situation:
+
+vote_id: 			        Id of the vote
+voting_scheme: 			    Plurality, Vote for 2, Anti-Plurality, Borda
+limitation_dropped: 	    ATVA_1 ATVA_2 ATVA_3 ATVA_4 NONE
+num_voters: 			    number of voters
+num_candidates: 		    number of cadidates
+outcome: 			        the final list of votes each candidates recieved
+hapiness_list: 			    list of hapiness score for all voters
+overall_hapiness: 		    sum of all hapiness
+strategic_voters: 		    list containing the voters that had strategic voting options, or a chosen set of voters (ATVA_4)
+risk_of_strategic_voting: 	a value that specifies how high the risk of strategic voting for that specific situation was
+pairs:                      a dict contianing the pairs of voters that collaborated of rivaled, applicable to only ATVA_1 and ATVA_2 (in case of rivals, the voter at the key will be initial voter and the value will be the retaliator)
+
+strategic_voting_results.csv: 
+
+the second file should describe the strategic voting in more detail, there will as many rows for a given user as there will be strategic voting options for him
+
+vote_id: 			        Id of the vote
+voter_id: 			        Id of the voter
+honest_vote: 			    the initial vote the voter made
+hapiness_score: 		    the hapiness score of the voter at the honest vote
+strategic_vote: 		    the alternative vote made
+new_outcome: 			    the outcome after applying the the strategic vote
+new_hapiness_score: 	    the updated hapiness score after 
+new_overall_hapiness:	    the recalculated sum of hapiness after the strategic vote was applied
