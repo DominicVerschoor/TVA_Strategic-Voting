@@ -73,7 +73,7 @@ def start_screen(root):
     tk.Button(root, text="Next", command=save_choices_and_next).pack(pady=20)
 
 def second_screen(root):
-    """Display the third screen to input voter preferences in a matrix format."""
+    """Display the third screen to input voter preferences in a vertically and horizontally scrollable panel."""
     clear_screen(root)
 
     candidate_letters = [chr(65 + i) for i in range(num_candidates)]
@@ -82,37 +82,56 @@ def second_screen(root):
     instructions.pack(pady=10)
 
     if selected_limitation:
-        limitation_label = tk.Label(root, text=f"The limitation dropped was:{selected_limitation}", font=("Helvetica", 14))
+        limitation_label = tk.Label(root, text=f"The limitation dropped was: {selected_limitation}", font=("Helvetica", 14))
         limitation_label.pack(pady=10)
-    
-    matrix_frame = tk.Frame(root)
-    matrix_frame.pack(pady=10)
-    
+
+    # Create a container frame for scrolling
+    container = tk.Frame(root)
+    container.pack(expand=True, fill="both", padx=10, pady=10)
+
+    # Create a canvas inside the container
+    canvas = tk.Canvas(container)
+    canvas.pack(side="left", expand=True, fill="both")
+
+    # Add scrollbars
+    y_scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+    y_scrollbar.pack(side="right", fill="y")
+
+    x_scrollbar = tk.Scrollbar(root, orient="horizontal", command=canvas.xview)
+    x_scrollbar.pack(side="bottom", fill="x")
+
+    # Link scrollbars to the canvas
+    canvas.configure(yscrollcommand=y_scrollbar.set, xscrollcommand=x_scrollbar.set)
+
+    # Create a frame inside the canvas to hold the matrix
+    matrix_frame = tk.Frame(canvas)
+    canvas.create_window((0, 0), window=matrix_frame, anchor="nw")
+
     entries = []
-    
+
     # Create header row for candidate labels
     for j in range(num_candidates):
-        header_label = tk.Label(matrix_frame, text=f"Preference {j+1}")
+        header_label = tk.Label(matrix_frame, text=f"Preference {j+1}", font=("Helvetica", 12, "bold"))
         header_label.grid(row=0, column=j+1, padx=5, pady=5)
-    
+
     # Create matrix of Entry widgets
     for i in range(num_voters):
         row_entries = []
-        voter_label = tk.Label(matrix_frame, text=f"Voter {i + 1}")
-        voter_label.grid(row=i+1, column=0, padx=5, pady=5)
+        voter_label = tk.Label(matrix_frame, text=f"Voter {i + 1}", font=("Helvetica", 12))
+        voter_label.grid(row=i + 1, column=0, padx=5, pady=5)
         for j in range(num_candidates):
-            entry = tk.Entry(matrix_frame, width=2, justify='center')
-            entry.grid(row=i+1, column=j+1, padx=5, pady=5)
+            entry = tk.Entry(matrix_frame, width=4, justify='center')
+            entry.grid(row=i + 1, column=j + 1, padx=5, pady=5)
             row_entries.append(entry)
         entries.append(row_entries)
-    
-    # If preferences is not empty, fill the matrix with the existing preferences
+
+    # If preferences exist, fill the matrix
     if preferences:
         for i, row in enumerate(entries):
             for j, entry in enumerate(row):
                 entry.delete(0, tk.END)
                 entry.insert(0, preferences[i][j])
-    
+
     def random_fill():
         """Fill the matrix with random unique preferences for each voter."""
         for row in entries:
@@ -120,7 +139,7 @@ def second_screen(root):
             for entry, value in zip(row, random_prefs):
                 entry.delete(0, tk.END)
                 entry.insert(0, value)
-    
+
     def validate_and_next():
         global preferences
         preferences = []
@@ -137,27 +156,31 @@ def second_screen(root):
             third_screen(root)
         except ValueError:
             messagebox.showwarning("Input Error", f"Please enter unique single letters for each candidate in the set {', '.join(candidate_letters)}.")
-    
+
     def go_back():
         global preferences
         preferences = []
         start_screen(root)
-    
-    # Random Fill button
-    random_button = tk.Button(root, text="Random Fill", command=random_fill)
-    random_button.pack(pady=10)
-    
-    # Back button, should ne in the right side of the next button
-    back_button = tk.Button(root, text="Back", command=go_back)
-    back_button.pack(pady=10)
-    
-    # Next button
-    next_button = tk.Button(root, text="Next", command=validate_and_next)
-    next_button.pack(pady=10)
 
-    # back and next should be next to each other
+    # Update scroll region when the matrix changes
+    def update_scroll_region(event=None):
+        canvas.configure(scrollregion=canvas.bbox("all"))
 
-    
+    matrix_frame.bind("<Configure>", update_scroll_region)
+
+    # Button frame to align buttons horizontally
+    button_frame = tk.Frame(root)
+    button_frame.pack(pady=10)
+
+    # Buttons
+    random_button = tk.Button(button_frame, text="Random Fill", command=random_fill)
+    random_button.pack(side="left", padx=5)
+
+    back_button = tk.Button(button_frame, text="Back", command=go_back)
+    back_button.pack(side="left", padx=5)
+
+    next_button = tk.Button(button_frame, text="Next", command=validate_and_next)
+    next_button.pack(side="left", padx=5)
 
 def third_screen(root):
     """Display the fourth screen with formatted outputs in a scrollable panel."""
@@ -353,6 +376,25 @@ def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_
         # print(strategic_options)
     return strategic_options
 
+def ouput4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    "return a list of pairs of of voters that collaborated"
+    candidate_letters = [chr(65 + i) for i in range(num_candidates)]
+    all_permutations = list(itertools.permutations(candidate_letters))
+    strategic_options = []
+    voter_id_list = []
+    for i in range(num_voters):
+        voter_id_list.append(i+1)
+    # hard code example of pairs such as [{1:[A,B,C,D], 2:[A,C,B,D]}, {3:[A,B,C,D], 4:[A,C,B,D]}, ...] 
+    # select a random pairs 
+    
+    return strategic_options
+def ouput4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    return None
+def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    return None
+def ouput4_atva4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    return None
+
 def ranking_utility(pref, outcome_ranking):
     N = len(pref)
     # Convert the voter's preference into a dict: candidate -> preference rank
@@ -484,15 +526,15 @@ def run_experiment(voting_scheme, atva_mode, count):
                     writer.writerow([vote_id, voter_id, preferences[voter_id-1], strategy[3], strategy[0], strategy[1], strategy[2], strategy[4]])
 
 
-# def main():
-#     root = tk.Tk()
-#     root.title("Voting System")
-#     root.geometry("800x600")
-#     start_screen(root)
-#     root.mainloop()
-
 def main():
-    run_experiment("Borda", "ATVA_1", 1)
+    root = tk.Tk()
+    root.title("Voting System")
+    root.geometry("800x600")
+    start_screen(root)
+    root.mainloop()
+
+# def main():
+#     run_experiment("Borda", "ATVA_1", 1)
 
 
 if __name__ == "__main__":
