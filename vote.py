@@ -53,7 +53,7 @@ def start_screen(root):
     candidates_entry.pack(pady=5)
     
     def save_choices_and_next():
-        global voting_scheme, selected_limitation, num_voters, num_candidates
+        global voting_scheme, selected_limitation, num_voters, num_candidates, atva_mode
         try:
             voting_scheme = scheme_var.get()
             selected_limitation = limitation_var.get()
@@ -152,7 +152,7 @@ def second_screen(root):
                         raise ValueError
                     row_pref.append(value)
                 preferences.append(row_pref)
-            print(preferences)
+            # print(preferences)
             third_screen(root)
         except ValueError:
             messagebox.showwarning("Input Error", f"Please enter unique single letters for each candidate in the set {', '.join(candidate_letters)}.")
@@ -205,32 +205,60 @@ def third_screen(root):
     overall_hapiness = output3(hapiness_list)
     strategic_votes_list = output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
     risk = output5(preferences, outcome, p_pivot=0.01)
-    
-    # Display formatted outputs
-    tk.Label(scrollable_frame, text="Non-strategic voting outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(outcome), font=("Helvetica", 12)).pack(pady=5)
-    
-    tk.Label(scrollable_frame, text="Happiness level of each voter:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(hapiness_list), font=("Helvetica", 12)).pack(pady=5)
-    
-    tk.Label(scrollable_frame, text="Overall happiness level:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(overall_hapiness), font=("Helvetica", 12)).pack(pady=5)
-    
-    tk.Label(scrollable_frame, text="Set of strategic voting options for each user:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    for voter in strategic_votes_list:
-        tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
-        for option in voter['Strategic Options']:
-            tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
-            tk.Label(scrollable_frame, text=f"New Outcome: {option[1]}", font=("Helvetica", 12)).pack()
-            tk.Label(scrollable_frame, text=f"New Happiness: {option[2]}", font=("Helvetica", 12)).pack()
-            tk.Label(scrollable_frame, text=f"Original Happiness: {option[3]}", font=("Helvetica", 12)).pack()
-            tk.Label(scrollable_frame, text=f"Total New Happiness: {option[4]}", font=("Helvetica", 12)).pack()
-            tk.Label(scrollable_frame, text=f"Total Original Happiness: {option[5]}", font=("Helvetica", 12)).pack()
-            tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
-    
-    tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
-    tk.Label(scrollable_frame, text=str(risk), font=("Helvetica", 12)).pack(pady=5)
-    
+
+    # result = [  outcome, preferences, hapiness_list, overall_hapiness, 
+    #             new_outcome, new_preferences, viable_voter_ids, new_hapiness_list, new_overall_hapiness]
+
+    if atva_mode == 'ATVA_4':
+        result = ouput4_atva4(voting_scheme, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
+        # honest result
+        tk.Label(scrollable_frame, text="Outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[0]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Honest Votes:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[1]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Happiness List:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[2]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Overall Happiness:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[3]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="------------------------------------------------------------------------", font=("Helvetica", 12)).pack()
+        # strategic result
+        tk.Label(scrollable_frame, text="NEW Outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[4]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Strategic Votes:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[5]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Viable Voter IDs:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[6]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="NEW Happiness List:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[7]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="NEW Overall Happiness:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result[8]), font=("Helvetica", 12)).pack(pady=5)
+
+    else:
+        # Display formatted outputs
+        tk.Label(scrollable_frame, text="Non-strategic voting outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(outcome), font=("Helvetica", 12)).pack(pady=5)
+        
+        tk.Label(scrollable_frame, text="Happiness level of each voter:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(hapiness_list), font=("Helvetica", 12)).pack(pady=5)
+        
+        tk.Label(scrollable_frame, text="Overall happiness level:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(overall_hapiness), font=("Helvetica", 12)).pack(pady=5)
+        
+        tk.Label(scrollable_frame, text="Set of strategic voting options for each user:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        for voter in strategic_votes_list:
+            tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
+            for option in voter['Strategic Options']:
+                tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Outcome: {option[1]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Happiness: {option[2]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Original Happiness: {option[3]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total New Happiness: {option[4]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total Original Happiness: {option[5]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
+        
+        tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(risk), font=("Helvetica", 12)).pack(pady=5)
+        
     # Back button
     back_button = tk.Button(root, text="Back", command=lambda: second_screen(root))
     back_button.pack(side="bottom")
@@ -357,9 +385,10 @@ def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_
             new_preferences = copy.deepcopy(preferences)
             new_preferences[i] = list(permutation)
             new_outcome = output1(voting_scheme, new_preferences)
-            new_hapiness_list = output2(new_preferences, new_outcome)
+            # new_hapiness_list = output2(new_preferences, new_outcome)
+            new_hapiness_list = output2(preferences, new_outcome)
             if new_hapiness_list[i] > hapiness_list[i]:
-                print(classify_strategic_vote(preferences[i], new_preferences[i]))
+                # print(classify_strategic_vote(preferences[i], new_preferences[i]))
                 voter_strategic_options.append((
                     new_preferences[i],
                     new_outcome,
@@ -376,24 +405,74 @@ def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_
         # print(strategic_options)
     return strategic_options
 
-def ouput4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-    "return a list of pairs of of voters that collaborated"
-    candidate_letters = [chr(65 + i) for i in range(num_candidates)]
-    all_permutations = list(itertools.permutations(candidate_letters))
-    strategic_options = []
-    voter_id_list = []
-    for i in range(num_voters):
-        voter_id_list.append(i+1)
-    # hard code example of pairs such as [{1:[A,B,C,D], 2:[A,C,B,D]}, {3:[A,B,C,D], 4:[A,C,B,D]}, ...] 
-    # select a random pairs 
-    
-    return strategic_options
+def policy_distance_viability_gap(preferences, outcome):
+    outcome_copy = outcome.copy()
+    outcome_copy = list(outcome_copy.keys())
+    viability_gaps = []
+    max_rank = len(outcome_copy) - 1  # Maximum possible gap
+
+    for pref in preferences:
+        sincere_choice = pref[0]  # The voter's sincere first choice
+        sincere_rank = outcome_copy.index(sincere_choice)  # Position in final ranking
+
+        # Find the best viable candidate (closest higher-ranked candidate in winner list)
+        best_viable_candidate = None
+        best_viable_rank = float('inf')
+
+        for candidate in pref:
+            candidate_rank = outcome_copy.index(candidate)
+            if candidate_rank < sincere_rank and candidate_rank < best_viable_rank:
+                best_viable_candidate = candidate
+                best_viable_rank = candidate_rank
+
+        # Compute the viability gap (distance between ranks) and normalize
+        viability_gap = sincere_rank - best_viable_rank if best_viable_candidate else 0
+        normalized_gap = viability_gap / max_rank if max_rank > 0 else 0
+        viability_gaps.append(normalized_gap)
+
+    return viability_gaps
+
 def ouput4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
     return None
 def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
     return None
-def ouput4_atva4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-    return None
+def ouput4_atva4(voting_scheme, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
+
+    viable_voter = policy_distance_viability_gap(preferences, outcome)
+    best_sv_per_voter = {}
+    # Select the best strategic vote for all users whose index in viable_voter is true
+    for i in range(len(viable_voter)):
+        if viable_voter[i]:
+            # Go through the list of dicts which have dict["Voter"] = i+1 and select the strategic that increases the happiness the most
+            best_happiness = 0
+            best_strategic = None
+            for strategic in strategic_votes_list:
+                if strategic["Voter"] == i + 1:
+                    for option in strategic["Strategic Options"]:
+                        if option[2] > best_happiness:
+                            best_happiness = option[2]
+                            best_strategic = option
+            # Apply the best strategic vote if found
+            if best_strategic:
+                print(f"Voter {i + 1} should use strategic vote: {best_strategic[0]} for increased happiness: {best_happiness}")
+                best_sv_per_voter[i] = best_strategic[0]
+        
+    # apply the new preferences in new_preferences
+    new_preferences = preferences.copy()
+    for i in best_sv_per_voter.keys():
+        new_preferences[i] = best_sv_per_voter[i]
+    
+    new_outcome = output1(voting_scheme, new_preferences)
+    new_hapiness_list = output2(preferences, new_outcome)
+    new_overall_hapiness = output3(new_hapiness_list)
+    viable_voter_ids = list(best_sv_per_voter.keys())
+    viable_voter_ids = [x + 1 for x in viable_voter_ids]
+
+    # create an output
+    result = [  outcome, preferences, hapiness_list, overall_hapiness, 
+                new_outcome, new_preferences, viable_voter_ids, new_hapiness_list, new_overall_hapiness]
+    
+    return result
 
 def ranking_utility(pref, outcome_ranking):
     N = len(pref)
