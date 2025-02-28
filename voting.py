@@ -153,6 +153,68 @@ class Voter:
             viability_gaps.append(normalized_gap)
 
         return viability_gaps
+    
+    def output4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+        """Analyzes strategic voting options considering voter collusion of various sizes.
+        
+        Args:
+            voting_scheme (str): The voting scheme being used
+            outcome (dict): Current voting outcome
+            preferences (list): List of voter preferences
+            hapiness_list (list): Current happiness scores
+            num_voters (int): Number of voters
+            num_candidates (int): Number of candidates
+            
+        Returns:
+            list: Strategic voting options for colluding voter groups
+        """
+        strategic_options = []
+        candidate_letters = [chr(65 + i) for i in range(num_candidates)]
+        all_permutations = list(itertools.permutations(candidate_letters))
+        
+        # Consider coalitions of size 2 up to num_voters-1 (excluding single voters and all voters)
+        for coalition_size in range(1, num_voters):
+            # Generate all possible voter coalitions of current size
+            voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
+            
+            for coalition in voter_coalitions:
+                coalition_options = []
+                
+                # Try all possible preference combinations for the coalition
+                # Note: This will be computationally expensive for large coalitions
+                # If practically infeasible, I can attempt to implement some optimisation strategy
+                for perms in itertools.product(all_permutations, repeat=len(coalition)):
+                    new_preferences = copy.deepcopy(preferences)
+                    
+                    # Apply new preferences for each voter in coalition
+                    for voter_idx, new_pref in zip(coalition, perms):
+                        new_preferences[voter_idx] = list(new_pref)
+                    
+                    # Calculate new outcome with coalition votes
+                    new_outcome = Voter.output1(voting_scheme, new_preferences)
+                    new_hapiness_list = Voter.output2(preferences, new_outcome)
+                    
+                    # Check if collusion improves happiness for ALL coalition members
+                    if all(new_hapiness_list[voter] > hapiness_list[voter] for voter in coalition):
+                        coalition_options.append({
+                            "voters": [v + 1 for v in coalition],  # +1 for 1-based indexing
+                            "new_preferences": [list(p) for p in perms],
+                            "new_outcome": new_outcome,
+                            "new_happiness": [new_hapiness_list[v] for v in coalition],
+                            "original_happiness": [hapiness_list[v] for v in coalition],
+                            "overall_new_happiness": sum(new_hapiness_list),
+                            "overall_original_happiness": sum(hapiness_list)
+                        })
+                
+                if coalition_options:
+                    strategic_options.append({
+                        "coalition": [v + 1 for v in coalition],
+                        "size": len(coalition),
+                        "collusion_options": coalition_options
+                    })
+    
+        return strategic_options
+    
 
     def ouput4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         return None
