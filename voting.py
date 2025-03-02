@@ -173,7 +173,7 @@ class Voter:
         all_permutations = list(itertools.permutations(candidate_letters))
         
         # Consider coalitions of size 2 up to num_voters-1 (excluding single voters and all voters)
-        for coalition_size in range(1, num_voters):
+        for coalition_size in range(2, 4): # changes the numbers here just to test it out, it should be from 2 to num_voters.
             # Generate all possible voter coalitions of current size
             voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
             

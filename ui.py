@@ -199,10 +199,22 @@ def third_screen(root):
     strategic_votes_list = Voter.output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
     risk = Voter.output5(preferences, outcome, p_pivot=0.01)
 
-    # result = [  outcome, preferences, hapiness_list, overall_hapiness, 
-    #             new_outcome, new_preferences, viable_voter_ids, new_hapiness_list, new_overall_hapiness]
+    if atva_mode == "ATVA_1":
+        result = Voter.output4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        for coalition in result:
+            tk.Label(scrollable_frame, text=f"Coalition of size {coalition['size']}:", font=("Helvetica", 12, "bold")).pack(pady=5)
+            for option in coalition['collusion_options']:
+                tk.Label(scrollable_frame, text=f"Voters: {option['voters']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text=f"New Preferences: {option['new_preferences']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text=f"New Outcome: {option['new_outcome']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text=f"New Happiness: {option['new_happiness']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text=f"Original Happiness: {option['original_happiness']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text=f"Overall New Happiness: {option['overall_new_happiness']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text=f"Overall Original Happiness: {option['overall_original_happiness']}", font=("Helvetica", 12)).pack(pady=5)
+                tk.Label(scrollable_frame, text="------------------------------------------------------------------------------------------------------------------------------------------------", font=("Helvetica", 12)).pack()
 
-    if atva_mode == 'ATVA_4':
+
+    elif atva_mode == 'ATVA_4':
         result = Voter.ouput4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
         # honest result
         tk.Label(scrollable_frame, text="Outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
