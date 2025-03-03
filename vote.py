@@ -434,8 +434,11 @@ def policy_distance_viability_gap(preferences, outcome):
 
 def ouput4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
     return None
+
+from ATVA3 import atva3_pipeline
 def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-    return None
+    return atva3_pipeline(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+
 def ouput4_atva4(voting_scheme, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
     viable_voter = policy_distance_viability_gap(preferences, outcome)

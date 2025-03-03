@@ -81,6 +81,8 @@ class Voter:
         for voter in preferences:
             if(voter[0]==final_ranking_array[0]):
                 pos_score = max_score
+            elif voter[0] not in final_ranking_array:
+                pos_score = sum(array[i]*(n - abs(voter.index(c) - len(final_ranking_array) + 1)) for i, c in enumerate(voter))
             else:
                 # Compute Positional Satisfaction Score
                 pos_score = sum(array[i]*(n - abs(voter.index(c) - final_ranking_array.index(c))) for i, c in enumerate(voter))
@@ -218,8 +220,10 @@ class Voter:
 
     def ouput4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         return None
+
     def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         return None
+    
     def ouput4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
         viable_voter = Voter.policy_distance_viability_gap(preferences, outcome)
