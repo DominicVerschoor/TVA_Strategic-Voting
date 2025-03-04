@@ -3,6 +3,10 @@ import copy
 import itertools
 from itertools import permutations
 from collections import Counter
+import random
+import csv
+import os
+import tkinter as tk
 
 def create_symmetric_array(n):
     if n < 1:
@@ -162,6 +166,7 @@ def weighted_sampling(num_voters, candidates, preferences):
         weighted_remaining = list(np.random.choice(remaining_candidates, size=len(remaining_candidates), replace=False, p=weights))
         
         full_ranking = [first_choice] + weighted_remaining
+        full_ranking = [str(i) for i in full_ranking]
         sampled_rankings.append(full_ranking)
     
     return sampled_rankings
@@ -192,7 +197,15 @@ def atva3_pipeline(voting_scheme, outcome, preferences, happiness_list, num_vote
     strategic_vote = get_strategic_voting_options(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
     print("Strategic voting options:", strategic_vote)
     
-    return strategic_vote
+    result = {
+        "first_choice_counts": first_choice_counts,
+        "estimated_preferences": estimated_preferences,
+        "happiness_list": happiness_list,
+        "total_happiness": total_happiness,
+        "strategic_vote": strategic_vote
+        }
+    return result
+    # return strategic_vote
 
 
 # EXPERIMENT CODE ----------------------------------------------------------------

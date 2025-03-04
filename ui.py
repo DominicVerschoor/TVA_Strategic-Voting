@@ -213,6 +213,32 @@ def third_screen(root):
                 tk.Label(scrollable_frame, text=f"Overall Original Happiness: {option['overall_original_happiness']}", font=("Helvetica", 12)).pack(pady=5)
                 tk.Label(scrollable_frame, text="------------------------------------------------------------------------------------------------------------------------------------------------", font=("Helvetica", 12)).pack()
 
+    elif atva_mode == "ATVA_3":
+        result = Voter.ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        # Display the results for ATVA_3
+        tk.Label(scrollable_frame, text="First-choice counts:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["first_choice_counts"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Estimated Preferences:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["estimated_preferences"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Happiness List:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["happiness_list"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Total Happiness:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["total_happiness"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Strategic Votes:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        for voter in result["strategic_vote"]:
+            tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
+            for option in voter['Strategic Options']:
+                tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Outcome: {option[1]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Happiness: {option[2]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Original Happiness: {option[3]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total New Happiness: {option[4]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total Original Happiness: {option[5]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
+        
+        tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(risk), font=("Helvetica", 12)).pack(pady=5)
+
 
     elif atva_mode == 'ATVA_4':
         result = Voter.ouput4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)

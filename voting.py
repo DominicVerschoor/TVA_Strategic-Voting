@@ -3,6 +3,7 @@ import random
 import itertools
 from itertools import permutations
 import copy
+from ATVA3 import atva3_pipeline
 
 # create class
 class Voter:
@@ -109,7 +110,6 @@ class Voter:
                 new_preferences = copy.deepcopy(preferences)
                 new_preferences[i] = list(permutation)
                 new_outcome = Voter.output1(voting_scheme, new_preferences)
-                # new_hapiness_list = output2(new_preferences, new_outcome)
                 new_hapiness_list = Voter.output2(preferences, new_outcome)
                 if new_hapiness_list[i] > hapiness_list[i]:
                     # print(classify_strategic_vote(preferences[i], new_preferences[i]))
@@ -222,7 +222,7 @@ class Voter:
         return None
 
     def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-        return None
+        return atva3_pipeline(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
     
     def ouput4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
