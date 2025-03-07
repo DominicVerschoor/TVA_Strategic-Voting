@@ -176,7 +176,9 @@ def atva3_pipeline(voting_scheme, outcome, preferences, happiness_list, num_vote
     Estimates full rankings from observed first-choice votes and determines strategic voting options.
     """
     # Extract first-choice votes, sorting alphabetically in case of ties
-    first_choice_counts = dict(sorted(Counter(pref[0] for pref in preferences).items()))
+    first_choice_counts = Counter(pref[0] for pref in preferences)
+    first_choice_counts.update({candidate: 0 for candidate in outcome.keys() if candidate not in first_choice_counts})
+    first_choice_counts = dict(sorted(first_choice_counts.items(), key=lambda x: (-x[1], x[0])))
     print("First-choice counts:", first_choice_counts)
     
     # Extract unique candidates

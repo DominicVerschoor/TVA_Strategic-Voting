@@ -3,6 +3,7 @@ import random
 import itertools
 from itertools import permutations
 import copy
+from collections import Counter
 from ATVA3 import atva3_pipeline
 
 # create class
@@ -158,7 +159,7 @@ class Voter:
     
     def output4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         """Analyzes strategic voting options considering voter collusion of various sizes.
-        
+    
         Args:
             voting_scheme (str): The voting scheme being used
             outcome (dict): Current voting outcome
@@ -166,7 +167,7 @@ class Voter:
             hapiness_list (list): Current happiness scores
             num_voters (int): Number of voters
             num_candidates (int): Number of candidates
-            
+        
         Returns:
             list: Strategic voting options for colluding voter groups
         """
@@ -214,17 +215,80 @@ class Voter:
                         "size": len(coalition),
                         "collusion_options": coalition_options
                     })
+        
+        if strategic_options:
+            print(strategic_options[0]["collusion_options"])
     
         return strategic_options
     
 
-    def ouput4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    def output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         return None
 
-    def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-        return atva3_pipeline(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+    # def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    #     return atva3_pipeline(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
     
-    def ouput4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
+    def weighted_sampling(num_voters, candidates, preferences):
+        """
+        Generates plausible full rankings for voters based on observed first-choice votes.
+        """
+        sampled_rankings = []
+        
+        for voter_prefs in preferences:
+            first_choice = voter_prefs[0]  # We know each voter's first choice
+            
+            # Generate a weighted random sample of the remaining candidates without replacement
+            remaining_candidates = [c for c in candidates if c != first_choice]
+            weights = np.array([1 / (i + 1) for i in range(len(remaining_candidates))])  # Example weighting: prefer higher-ranked candidates
+            weights /= weights.sum()  # Normalize weights
+            weighted_remaining = list(np.random.choice(remaining_candidates, size=len(remaining_candidates), replace=False, p=weights))
+            
+            full_ranking = [first_choice] + weighted_remaining
+            full_ranking = [str(i) for i in full_ranking]
+            sampled_rankings.append(full_ranking)
+        
+        return sampled_rankings
+
+    def output4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+        """
+        Estimates full rankings from observed first-choice votes and determines strategic voting options.
+        """
+        # Extract first-choice votes, sorting alphabetically in case of ties
+        first_choice_counts = Counter(pref[0] for pref in preferences)
+        first_choice_counts.update({candidate: 0 for candidate in outcome.keys() if candidate not in first_choice_counts})
+        first_choice_counts = dict(sorted(first_choice_counts.items(), key=lambda x: (-x[1], x[0])))
+        print("First-choice counts:", first_choice_counts)
+        
+        # Extract unique candidates
+        candidates = sorted(set(c for pref in preferences for c in pref))
+        
+        # Generate plausible full rankings using weighted sampling
+        estimated_preferences = Voter.weighted_sampling(num_voters, candidates, preferences)
+        print("Sampled full preferences:", estimated_preferences)
+        
+        # Calculate happiness based on preferences
+        happiness_list = Voter.output2(preferences, outcome)
+        print("Happiness list:", happiness_list)
+        
+        total_happiness = Voter.output3(happiness_list)
+        print("Total happiness:", total_happiness)
+        
+        # Determine strategic voting options
+        strategic_vote = Voter.output4(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
+        print("Strategic voting options:", strategic_vote)
+
+        risk = Voter.output5(estimated_preferences, first_choice_counts, p_pivot=0.01)
+        
+        result = {
+            "first_choice_counts": first_choice_counts,
+            "estimated_preferences": estimated_preferences,
+            "happiness_list": happiness_list,
+            "total_happiness": total_happiness,
+            "strategic_vote": strategic_vote,
+            "risk": risk
+            }
+        return result    
+    def output4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
         viable_voter = Voter.policy_distance_viability_gap(preferences, outcome)
         best_sv_per_voter = {}
@@ -247,8 +311,12 @@ class Voter:
             
         # apply the new preferences in new_preferences
         new_preferences = preferences.copy()
+        strategic_votes = {}
         for i in best_sv_per_voter.keys():
             new_preferences[i] = best_sv_per_voter[i]
+            strategic_votes[i+1] = best_sv_per_voter[i]
+        
+        print(strategic_votes)
         
         new_outcome = Voter.output1(voting_scheme, new_preferences)
         new_hapiness_list = Voter.output2(preferences, new_outcome)
@@ -259,6 +327,22 @@ class Voter:
         # create an output
         result = [  outcome, preferences, hapiness_list, overall_hapiness, 
                     new_outcome, new_preferences, viable_voter_ids, new_hapiness_list, new_overall_hapiness]
+        
+        # change to dict
+        result = {
+            "outcome": outcome,
+            "preferences": preferences,
+            "hapiness_list": hapiness_list,
+            "overall_hapiness": overall_hapiness,
+
+            "new_outcome": new_outcome,
+            "strategic_votes": strategic_votes,
+            "viable_voter_ids": viable_voter_ids,
+            "new_hapiness_list": new_hapiness_list,
+            "new_overall_hapiness": new_overall_hapiness
+        }
+
+        print(list(result["strategic_votes"].values()))
         
         return result
 
