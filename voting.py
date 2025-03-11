@@ -220,10 +220,95 @@ class Voter:
             print(strategic_options[0]["collusion_options"])
     
         return strategic_options
-    
 
     def output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-        return None
+        """
+        Identifies the best counter-strategic voting response when one voter attempts strategic voting.
+        We assume that only one voter can strategically vote and only one voter can counter the strategic voter
+        """
+
+        candidates = [chr(65 + i) for i in range(num_candidates)]  # get candidates
+        all_permutations = list(itertools.permutations(candidates))  # get all permutations of candidate orderings
+
+        best_strategy = None
+        best_happiness_gain = 0
+        strategic_voter_index = None
+
+        # Find the best strategic move
+        for i in range(num_voters):
+            for perm in all_permutations:
+                new_preferences = copy.deepcopy(preferences)
+                new_preferences[i] = list(perm)  # strategic vote
+                new_outcome = Voter.output1(voting_scheme, new_preferences)
+                new_happiness_list = Voter.output2(preferences, new_outcome)  # happiness after strategic vote
+                happiness_gain = new_happiness_list[i] - hapiness_list[i]
+                if happiness_gain > best_happiness_gain:
+                    best_happiness_gain = happiness_gain
+                    best_strategy = list(perm)
+                    strategic_voter_index = i
+
+        if best_strategy is None:
+            return {"message": "No beneficial strategic move found."}
+
+        # Apply the strategic vote
+        new_preferences = copy.deepcopy(preferences)
+        new_preferences[strategic_voter_index] = best_strategy
+        manipulated_outcome = Voter.output1(voting_scheme, new_preferences)
+        manipulated_happiness_list = Voter.output2(preferences, manipulated_outcome)
+
+        # Find the best counter-strategic move
+        best_counter_strategy = None
+        best_counter_gain = 0
+        counter_voter_index = None
+
+        for j in range(num_voters):
+            if j == strategic_voter_index:
+                continue  # skip the strategic voter
+
+            for perm in all_permutations:
+                counter_preferences = copy.deepcopy(new_preferences)
+                counter_preferences[j] = list(perm)  # counter-strategic vote
+                counter_outcome = Voter.output1(voting_scheme, counter_preferences)
+                counter_happiness_list = Voter.output2(preferences, counter_outcome)
+
+                # Check if counter-strategic voter benefits or neutralizes strategic voter
+                counter_gain = counter_happiness_list[j] - manipulated_happiness_list[j]
+
+                if counter_gain > best_counter_gain:
+                    best_counter_gain = counter_gain
+                    best_counter_strategy = list(perm)
+                    counter_voter_index = j
+
+        if best_counter_strategy is None:
+            return {
+                "manipulator": strategic_voter_index + 1,
+                "original_vote": preferences[strategic_voter_index],
+                "strategic_vote": best_strategy,
+                "manipulated_outcome": manipulated_outcome,
+                "message": "No counter-strategy found."
+            }
+
+        # Apply the counter-strategic vote
+        final_preferences = copy.deepcopy(new_preferences)
+        final_preferences[counter_voter_index] = best_counter_strategy
+        final_outcome = Voter.output1(voting_scheme, final_preferences)
+        final_happiness_list = Voter.output2(preferences, final_outcome)
+
+        return {
+            "manipulator": strategic_voter_index + 1,
+            "original_vote": preferences[strategic_voter_index],
+            "strategic_vote": best_strategy,
+            "counter_voter": counter_voter_index + 1,
+            "counter_vote": best_counter_strategy,
+            "manipulated_outcome": manipulated_outcome,
+            "final_outcome": final_outcome,
+            "happiness_changes": {
+                "manipulator": (
+                hapiness_list[strategic_voter_index], manipulated_happiness_list[strategic_voter_index]),
+                "counter_voter": (
+                    manipulated_happiness_list[counter_voter_index], final_happiness_list[counter_voter_index])
+            }
+        }
 
     # def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
     #     return atva3_pipeline(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
