@@ -86,9 +86,29 @@ def run_experiment(voting_scheme, atva_mode, count):
                 
                 writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, pairs])
 
+
             elif atva_mode == "ATVA_2":
-                # waiting for implementation
-                pass
+                result = experiment_atva2(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates)
+                if "manipulator" not in result:
+                    print(f"Experiment ATVA_2: {result['message']}")  # If there is no stragtegic voter to be countered aginst, log the message and skip this iteration
+                    return
+
+                if "happiness_changes" not in result:
+                    print(f"Experiment ATVA_2: {result['message']}")  # Log the message and skip this iteration
+                    return
+
+                writer.writerow([
+                    vote_id,
+                    result.get("manipulator", "N/A"),
+                    preferences[result["manipulator"] - 1] if "manipulator" in result else "N/A",
+                    hapiness_list[result["manipulator"] - 1] if "manipulator" in result else "N/A",
+                    result.get("strategic_vote", "N/A"),
+                    result.get("manipulated_outcome", "N/A"),
+                    result["happiness_changes"]["manipulator"][1] if "happiness_changes" in result else "N/A",
+                    Voter.output3(
+                        result["happiness_changes"]["manipulator"]) if "happiness_changes" in result else "N/A"
+                ])
+
 
             elif atva_mode == "ATVA_3":
                 strategic_voters = [voter["Voter"] for voter in result["strategic_vote"]]
@@ -122,8 +142,29 @@ def run_experiment(voting_scheme, atva_mode, count):
                                 coalition["overall_new_happiness"]
                             ])
             elif atva_mode == "ATVA_2":
-                # waiting for implementation
-                pass
+                writer.writerow([
+                    vote_id,
+                    result["manipulator"],
+                    preferences[result["manipulator"] - 1],
+                    hapiness_list[result["manipulator"] - 1],
+                    result["strategic_vote"],
+                    result["manipulated_outcome"],
+                    result["happiness_changes"]["manipulator"][1],
+                    Voter.output3(result["happiness_changes"]["manipulator"])  # new overall happiness
+                ])
+
+                if "counter_voter" in result:
+                    writer.writerow([
+                        vote_id,
+                        result["counter_voter"],
+                        preferences[result["counter_voter"] - 1],
+                        result["happiness_changes"]["counter_voter"][0],
+                        result["counter_vote"],
+                        result["final_outcome"],
+                        result["happiness_changes"]["counter_voter"][1],
+                        Voter.output3(result["happiness_changes"]["counter_voter"])  # new overall happiness
+                    ])
+
             elif atva_mode == "ATVA_3":
                 strategic_votes = result["strategic_vote"]
                 for voter in strategic_votes:
@@ -166,10 +207,20 @@ def run_experiment(voting_scheme, atva_mode, count):
                         ])
 
 def main():
+    print("BTVA")
+    print("__________________________________________________________________________________________________________________________")
     run_experiment("Borda", "BTVA",   10)
+    print("ATVA_1")
+    print("__________________________________________________________________________________________________________________________")
     run_experiment("Borda", "ATVA_1", 10)
+    print("ATVA_2")
+    print("__________________________________________________________________________________________________________________________")
     run_experiment("Borda", "ATVA_2", 10)
+    print("ATVA_3")
+    print("__________________________________________________________________________________________________________________________")
     run_experiment("Borda", "ATVA_3", 10)
+    print("ATVA_4")
+    print("__________________________________________________________________________________________________________________________")
     run_experiment("Borda", "ATVA_4", 10)
 
 if __name__ == "__main__":
