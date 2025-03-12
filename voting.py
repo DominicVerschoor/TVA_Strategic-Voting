@@ -162,6 +162,7 @@ class Voter:
         """Return a structured list of strategic voting options for each voter that increases their happiness level."""
         strategies = ["compromising", "burying", "bullet"]
         strategic_options = []
+        alternative_risk = 0
 
         for i in range(num_voters):
             voter_strategic_options = []
