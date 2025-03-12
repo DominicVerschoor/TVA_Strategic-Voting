@@ -193,14 +193,14 @@ def third_screen(root):
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
 
-    outcome = Voter.output1(voting_scheme, preferences)
-    hapiness_list = Voter.output2(preferences, outcome)
-    overall_hapiness = Voter.output3(hapiness_list)
-    strategic_votes_list = Voter.output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
-    risk = Voter.output5(preferences, outcome, p_pivot=0.01)
+    outcome = Voter.calculate_voting_outcome(voting_scheme, preferences)
+    hapiness_list = Voter.calculate_happiness(preferences, outcome)
+    overall_hapiness = Voter.calculate_total_happiness(hapiness_list)
+    strategic_votes_list = Voter.get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+    risk = Voter.calculate_risk(preferences, outcome, p_pivot=0.01)
 
     if atva_mode == "ATVA_1":
-        result = Voter.output4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        result = Voter.get_strategic_voting_options_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         for coalition in result:
             tk.Label(scrollable_frame, text=f"Coalition of size {coalition['size']}:", font=("Helvetica", 12, "bold")).pack(pady=5)
             for option in coalition['collusion_options']:
@@ -214,7 +214,7 @@ def third_screen(root):
                 tk.Label(scrollable_frame, text="------------------------------------------------------------------------------------------------------------------------------------------------", font=("Helvetica", 12)).pack()
 
     elif atva_mode == "ATVA_2":
-        result = Voter.output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        result = Voter.get_strategic_voting_options_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         # Display the results for ATVA_2
         tk.Label(scrollable_frame, text="Manipulator:", font=("Helvetica", 12, "bold")).pack(pady=5)
         tk.Label(scrollable_frame, text=str(result["manipulator"]), font=("Helvetica", 12)).pack(pady=5)
@@ -235,7 +235,7 @@ def third_screen(root):
         tk.Label(scrollable_frame, text=f"Counter Voter: {result['happiness_changes']['counter_voter']}", font=("Helvetica", 12)).pack(pady=5)
         
     elif atva_mode == "ATVA_3":
-        result = Voter.output4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        result = Voter.get_strategic_voting_options_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         # Display the results for ATVA_3
         tk.Label(scrollable_frame, text="First-choice counts:", font=("Helvetica", 12, "bold")).pack(pady=5)
         tk.Label(scrollable_frame, text=str(result["first_choice_counts"]), font=("Helvetica", 12)).pack(pady=5)
@@ -262,7 +262,7 @@ def third_screen(root):
 
 
     elif atva_mode == 'ATVA_4':
-        result = Voter.ouput4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
+        result = Voter.get_strategic_voting_options_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
         # honest result
         tk.Label(scrollable_frame, text="Outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
         tk.Label(scrollable_frame, text=str(result["outcome"]), font=("Helvetica", 12)).pack(pady=5)

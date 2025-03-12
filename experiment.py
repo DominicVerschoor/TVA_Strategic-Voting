@@ -3,30 +3,9 @@ import csv
 import os
 from voting import Voter
 
-
-def experiment_btva(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates):
-    return None
-
-def experiment_atva1(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates):
-    return Voter.output4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
-
-def experiment_atva2(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates):
-    return Voter.output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
-
-def experiment_atva3(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates):
-    return Voter.output4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
-
-def experiment_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
-    return Voter.output4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
-
-def run_experiment(voting_scheme, atva_mode, count):
+def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iterations):
     # Generate random numbers of voters and candidates
-    for _ in range(count):
-        # num_voters = random.randint(3, 10)
-        # num_candidates = random.randint(3, 10)
-
-        num_voters = 5
-        num_candidates = 4
+    for _ in range(num_iterations):
 
         # Create random list preferences that stores num_voters preferences of size num_candidates
         preferences = []
@@ -34,30 +13,30 @@ def run_experiment(voting_scheme, atva_mode, count):
             preferences.append(random.sample([chr(i) for i in range(65, 65 + num_candidates)], num_candidates))
 
         # Compute outputs
-        outcome = Voter.output1(voting_scheme, preferences)  # Outcome
-        hapiness_list = Voter.output2(preferences, outcome)  # Happiness list
-        overall_hapiness = Voter.output3(hapiness_list)  # Overall happiness
-        strategic_votes_list = Voter.output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)  # list of the form: {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
-        risk = Voter.output5(preferences, outcome, p_pivot=0.01)  # Overall risk
+        outcome = Voter.calculate_voting_outcome(voting_scheme, preferences)  # Outcome
+        hapiness_list = Voter.calculate_happiness(preferences, outcome)  # Happiness list
+        overall_hapiness = Voter.calculate_total_happiness(hapiness_list)  # Overall happiness
+        strategic_votes_list = Voter.get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)  # list of the form: {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
+        risk = Voter.calculate_risk(preferences, outcome, p_pivot=0.01)  # Overall risk
         pairs = None
 
         # get a unique list of voter id from {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
         strategic_voters = [voter["Voter"] for voter in strategic_votes_list]
 
-        file1 = "outcome_results_LOL.csv"
-        file2 = "strategic_voting_results_LOL.csv"
+        file1 = "outcome_results.csv"
+        file2 = "strategic_voting_results.csv"
 
         vote_id = 0
 
         result = None
         if atva_mode == "ATVA_1":
-            result = experiment_atva1(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates)
+            result = Voter.get_strategic_voting_options_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         elif atva_mode == "ATVA_2":
-            result = experiment_atva2(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates)
+            result = Voter.get_strategic_voting_options_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         elif atva_mode == "ATVA_3":
-            result = experiment_atva3(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates)
+            result = Voter.get_strategic_voting_options_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         elif atva_mode == "ATVA_4":
-            result = experiment_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
+            result = Voter.get_strategic_voting_options_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness)
 
         # Write outcome results to CSV
         file1_exists = os.path.isfile(file1)
@@ -88,7 +67,6 @@ def run_experiment(voting_scheme, atva_mode, count):
 
 
             elif atva_mode == "ATVA_2":
-                result = experiment_atva2(voting_scheme, preferences, outcome, hapiness_list, num_voters, num_candidates)
                 if "manipulator" not in result:
                     print(f"Experiment ATVA_2: {result['message']}")  # If there is no stragtegic voter to be countered aginst, log the message and skip this iteration
                     return
@@ -113,7 +91,7 @@ def run_experiment(voting_scheme, atva_mode, count):
                     result.get("strategic_vote", "N/A"),
                     result.get("manipulated_outcome", "N/A"),
                     result["happiness_changes"]["manipulator"][1] if "happiness_changes" in result else "N/A",
-                    Voter.output3(
+                    Voter.calculate_total_happiness(
                         result["happiness_changes"]["manipulator"]) if "happiness_changes" in result else "N/A"
                 ])
 
@@ -158,7 +136,7 @@ def run_experiment(voting_scheme, atva_mode, count):
                     result["strategic_vote"],
                     result["manipulated_outcome"],
                     result["happiness_changes"]["manipulator"][1],
-                    Voter.output3(result["happiness_changes"]["manipulator"])  # new overall happiness
+                    Voter.calculate_total_happiness(result["happiness_changes"]["manipulator"])  # new overall happiness
                 ])
 
                 if "counter_voter" in result:
@@ -171,7 +149,7 @@ def run_experiment(voting_scheme, atva_mode, count):
                         result["counter_vote"],
                         result["final_outcome"],
                         result["happiness_changes"]["counter_voter"][1],
-                        Voter.output3(result["happiness_changes"]["counter_voter"])  # new overall happiness
+                        Voter.calculate_total_happiness(result["happiness_changes"]["counter_voter"])  # new overall happiness
                     ])
 
             elif atva_mode == "ATVA_3":
@@ -216,21 +194,21 @@ def run_experiment(voting_scheme, atva_mode, count):
                         ])
 
 def main():
-    print("BTVA")
-    print("__________________________________________________________________________________________________________________________")
-    run_experiment("Borda", "BTVA",   10)
-    print("ATVA_1")
-    print("__________________________________________________________________________________________________________________________")
-    run_experiment("Borda", "ATVA_1", 10)
-    print("ATVA_2")
-    print("__________________________________________________________________________________________________________________________")
-    run_experiment("Borda", "ATVA_2", 10)
-    print("ATVA_3")
-    print("__________________________________________________________________________________________________________________________")
-    run_experiment("Borda", "ATVA_3", 10)
-    print("ATVA_4")
-    print("__________________________________________________________________________________________________________________________")
-    run_experiment("Borda", "ATVA_4", 10)
+    voting_schemes = ["Plurality", "Vote For 2", "Anti-Plurality", "Borda"]
+    atva_modes = ["BTVA", "ATVA_1", "ATVA_2", "ATVA_3", "ATVA_4"]
+
+    num_voters = 5
+    num_candidates = 4
+
+    num_iterations = 10
+
+    for voting_scheme in voting_schemes:
+        print("Voting Scheme:", voting_scheme)
+        print("__________________________________________________________________________________________________________________________")
+        for atva_mode in atva_modes:
+            print(atva_mode)
+            print("__________________________________________________________________________________________________________________________")
+            run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iterations)
 
 if __name__ == "__main__":
     main()

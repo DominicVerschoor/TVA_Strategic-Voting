@@ -10,7 +10,7 @@ from ATVA3 import atva3_pipeline
 class Voter:
     def __init__():
         pass
-    def output1(voting_scheme,preferences):
+    def calculate_voting_outcome(voting_scheme,preferences):
         """Display the first output."""
         # clear_screen(root)
         # create an outcome dictionary with all letter (as much as num_candidates) and set their values to 0
@@ -72,7 +72,7 @@ class Voter:
             second_half = second_half[1:]
         return first_half + second_half
 
-    def output2(preferences, final_ranking): #https://link.springer.com/chapter/10.1007/978-3-322-80613-0_7
+    def calculate_happiness(preferences, final_ranking): #https://link.springer.com/chapter/10.1007/978-3-322-80613-0_7
         # final_ranking is a map, change final ranking into an array containing the keys of the map
         final_ranking_array = list(final_ranking.keys())
         n = len(final_ranking)  # Number of candidates
@@ -94,11 +94,11 @@ class Voter:
 
         return happiness_scores
 
-    def output3(hapiness_list):
+    def calculate_total_happiness(hapiness_list):
         """Display the third output."""
         return np.sum(hapiness_list)
 
-    def output4(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    def get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         """Return a structured list of strategic voting options for each voter that increases their happiness level."""
         candidate_letters = [chr(65 + i) for i in range(num_candidates)]
         all_permutations = list(itertools.permutations(candidate_letters))
@@ -110,8 +110,8 @@ class Voter:
             for permutation in all_permutations:
                 new_preferences = copy.deepcopy(preferences)
                 new_preferences[i] = list(permutation)
-                new_outcome = Voter.output1(voting_scheme, new_preferences)
-                new_hapiness_list = Voter.output2(preferences, new_outcome)
+                new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+                new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
                 if new_hapiness_list[i] > hapiness_list[i]:
                     # print(classify_strategic_vote(preferences[i], new_preferences[i]))
                     voter_strategic_options.append((
@@ -157,7 +157,7 @@ class Voter:
 
         return viability_gaps
     
-    def output4_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    def get_strategic_voting_options_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         """Analyzes strategic voting options considering voter collusion of various sizes.
     
         Args:
@@ -194,8 +194,8 @@ class Voter:
                         new_preferences[voter_idx] = list(new_pref)
                     
                     # Calculate new outcome with coalition votes
-                    new_outcome = Voter.output1(voting_scheme, new_preferences)
-                    new_hapiness_list = Voter.output2(preferences, new_outcome)
+                    new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+                    new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
                     
                     # Check if collusion improves happiness for ALL coalition members
                     if all(new_hapiness_list[voter] > hapiness_list[voter] for voter in coalition):
@@ -218,7 +218,7 @@ class Voter:
             
         return strategic_options
 
-    def output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    def get_strategic_voting_options_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         """
         Identifies the best counter-strategic voting response when one voter attempts strategic voting.
         We assume that only one voter can strategically vote and only one voter can counter the strategic voter
@@ -236,8 +236,8 @@ class Voter:
             for perm in all_permutations:
                 new_preferences = copy.deepcopy(preferences)
                 new_preferences[i] = list(perm)  # strategic vote
-                new_outcome = Voter.output1(voting_scheme, new_preferences)
-                new_happiness_list = Voter.output2(preferences, new_outcome)  # happiness after strategic vote
+                new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+                new_happiness_list = Voter.calculate_happiness(preferences, new_outcome)  # happiness after strategic vote
                 happiness_gain = new_happiness_list[i] - hapiness_list[i]
                 if happiness_gain > best_happiness_gain:
                     best_happiness_gain = happiness_gain
@@ -250,8 +250,8 @@ class Voter:
         # Apply the strategic vote
         new_preferences = copy.deepcopy(preferences)
         new_preferences[strategic_voter_index] = best_strategy
-        manipulated_outcome = Voter.output1(voting_scheme, new_preferences)
-        manipulated_happiness_list = Voter.output2(preferences, manipulated_outcome)
+        manipulated_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+        manipulated_happiness_list = Voter.calculate_happiness(preferences, manipulated_outcome)
 
         # Find the best counter-strategic move
         best_counter_strategy = None
@@ -265,8 +265,8 @@ class Voter:
             for perm in all_permutations:
                 counter_preferences = copy.deepcopy(new_preferences)
                 counter_preferences[j] = list(perm)  # counter-strategic vote
-                counter_outcome = Voter.output1(voting_scheme, counter_preferences)
-                counter_happiness_list = Voter.output2(preferences, counter_outcome)
+                counter_outcome = Voter.calculate_voting_outcome(voting_scheme, counter_preferences)
+                counter_happiness_list = Voter.calculate_happiness(preferences, counter_outcome)
 
                 # Check if counter-strategic voter benefits or neutralizes strategic voter
                 counter_gain = counter_happiness_list[j] - manipulated_happiness_list[j]
@@ -288,8 +288,8 @@ class Voter:
         # Apply the counter-strategic vote
         final_preferences = copy.deepcopy(new_preferences)
         final_preferences[counter_voter_index] = best_counter_strategy
-        final_outcome = Voter.output1(voting_scheme, final_preferences)
-        final_happiness_list = Voter.output2(preferences, final_outcome)
+        final_outcome = Voter.calculate_voting_outcome(voting_scheme, final_preferences)
+        final_happiness_list = Voter.calculate_happiness(preferences, final_outcome)
 
         return {
             "manipulator": strategic_voter_index + 1,
@@ -306,9 +306,6 @@ class Voter:
                     manipulated_happiness_list[counter_voter_index], final_happiness_list[counter_voter_index])
             }
         }
-
-    # def ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-    #     return atva3_pipeline(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
     
     def weighted_sampling(num_voters, candidates, preferences):
         """
@@ -331,7 +328,7 @@ class Voter:
         
         return sampled_rankings
 
-    def output4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    def get_strategic_voting_options_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
         """
         Estimates full rankings from observed first-choice votes and determines strategic voting options.
         """
@@ -339,27 +336,27 @@ class Voter:
         first_choice_counts = Counter(pref[0] for pref in preferences)
         first_choice_counts.update({candidate: 0 for candidate in outcome.keys() if candidate not in first_choice_counts})
         first_choice_counts = dict(sorted(first_choice_counts.items(), key=lambda x: (-x[1], x[0])))
-        print("First-choice counts:", first_choice_counts)
+        # print("First-choice counts:", first_choice_counts)
         
         # Extract unique candidates
         candidates = sorted(set(c for pref in preferences for c in pref))
         
         # Generate plausible full rankings using weighted sampling
         estimated_preferences = Voter.weighted_sampling(num_voters, candidates, preferences)
-        print("Sampled full preferences:", estimated_preferences)
+        # print("Sampled full preferences:", estimated_preferences)
         
         # Calculate happiness based on preferences
-        happiness_list = Voter.output2(preferences, outcome)
-        print("Happiness list:", happiness_list)
+        happiness_list = Voter.calculate_happiness(preferences, outcome)
+        # print("Happiness list:", happiness_list)
         
-        total_happiness = Voter.output3(happiness_list)
-        print("Total happiness:", total_happiness)
+        total_happiness = Voter.calculate_total_happiness(happiness_list)
+        # print("Total happiness:", total_happiness)
         
         # Determine strategic voting options
-        strategic_vote = Voter.output4(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
-        print("Strategic voting options:", strategic_vote)
+        strategic_vote = Voter.get_strategic_voting_options(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
+        # print("Strategic voting options:", strategic_vote)
 
-        risk = Voter.output5(estimated_preferences, first_choice_counts, p_pivot=0.01)
+        risk = Voter.calculate_risk(estimated_preferences, first_choice_counts, p_pivot=0.01)
         
         result = {
             "first_choice_counts": first_choice_counts,
@@ -370,7 +367,7 @@ class Voter:
             "risk": risk
             }
         return result    
-    def output4_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
+    def get_strategic_voting_options_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
         viable_voter = Voter.policy_distance_viability_gap(preferences, outcome)
         best_sv_per_voter = {}
@@ -388,7 +385,7 @@ class Voter:
                                 best_strategic = option
                 # Apply the best strategic vote if found
                 if best_strategic:
-                    print(f"Voter {i + 1} should use strategic vote: {best_strategic[0]} for increased happiness: {best_happiness}")
+                # print(f"Voter {i + 1} should use strategic vote: {best_strategic[0]} for increased happiness: {best_happiness}")
                     best_sv_per_voter[i] = best_strategic[0]
             
         # apply the new preferences in new_preferences
@@ -398,11 +395,11 @@ class Voter:
             new_preferences[i] = best_sv_per_voter[i]
             strategic_votes[i+1] = best_sv_per_voter[i]
         
-        print(strategic_votes)
+        # print(strategic_votes)
         
-        new_outcome = Voter.output1(voting_scheme, new_preferences)
-        new_hapiness_list = Voter.output2(preferences, new_outcome)
-        new_overall_hapiness = Voter.output3(new_hapiness_list)
+        new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+        new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+        new_overall_hapiness = Voter.calculate_total_happiness(new_hapiness_list)
         viable_voter_ids = list(best_sv_per_voter.keys())
         viable_voter_ids = [x + 1 for x in viable_voter_ids]
 
@@ -424,7 +421,7 @@ class Voter:
             "new_overall_hapiness": new_overall_hapiness
         }
 
-        print(list(result["strategic_votes"].values()))
+        # print(list(result["strategic_votes"].values()))
         
         return result
 
@@ -442,7 +439,7 @@ class Voter:
             total_value += liking * pos_weight
         return total_value
 
-    def output5(preferences, final_ranking, p_pivot=0.01):
+    def calculate_risk(preferences, final_ranking, p_pivot=0.01):
 
         final_ranking_array = list(final_ranking.keys())
 
