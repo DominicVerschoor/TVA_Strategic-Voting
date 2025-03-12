@@ -23,7 +23,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
         # get a unique list of voter id from {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
         strategic_voters = [voter["Voter"] for voter in strategic_votes_list]
 
-        file1 = "outcome_results.csv"
+        file1 =          "outcome_results.csv"
         file2 = "strategic_voting_results.csv"
 
         vote_id = 0
@@ -75,6 +75,8 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                     print(f"Experiment ATVA_2: {result['message']}")  # Log the message and skip this iteration
                     return
 
+                # writer.writerow(["vote_id", "voting_scheme", "limitation_dropped", "num_voters", "num_candidates", "outcome", "hapiness_list", "overall_hapiness", "strategic_voters", "risk_of_strategic_voting", "pairs"])
+
                 writer.writerow([
                     vote_id,
                     voting_scheme,
@@ -83,16 +85,10 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                     num_candidates,
                     outcome,
                     hapiness_list,
-                    # TODO LOOK AT LINE 69 TO UNDERSTAND HOW THE STRUCTURE WORKS
-                    result["final_outcome"] if "final_outcome" in result else "N/A",
-                    result.get("manipulator", "N/A"),
-                    preferences[result["manipulator"] - 1] if "manipulator" in result else "N/A",
-                    hapiness_list[result["manipulator"] - 1] if "manipulator" in result else "N/A",
-                    result.get("strategic_vote", "N/A"),
-                    result.get("manipulated_outcome", "N/A"),
-                    result["happiness_changes"]["manipulator"][1] if "happiness_changes" in result else "N/A",
-                    Voter.calculate_total_happiness(
-                        result["happiness_changes"]["manipulator"]) if "happiness_changes" in result else "N/A"
+                    overall_hapiness,
+                    [result["manipulator"], result["counter_voter"]],
+                    risk, # TODO NEED TO VERIFY THIS
+                    [result["manipulator"], result["counter_voter"]], # # TODO NEED TO VERIFY THIS
                 ])
 
 
@@ -110,7 +106,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
         with open(file2, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             if not file2_exists:
-                writer.writerow(["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"])
+                writer.writerow(["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategy", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"])
 
             if atva_mode == "ATVA_1":
                 if len(result) > 0:
@@ -120,37 +116,52 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             writer.writerow([
                                 vote_id,
                                 coalition["voters"],
-                                [outcome[preferences[voter_id-1][0]] for voter_id in coalition["voters"]],
+                                [preferences[voter_id-1] for voter_id in coalition["voters"]],
                                 coalition["original_happiness"],
+                                coalition["strategy"],
                                 coalition["new_preferences"],
                                 coalition["new_outcome"],
                                 coalition["new_happiness"],
                                 coalition["overall_new_happiness"]
                             ])
             elif atva_mode == "ATVA_2":
+
+                manip_total_hapi = Voter.calculate_total_happiness(result["happiness_changes"]["manipulator"])
+                counter_total_hapi = Voter.calculate_total_happiness(result["happiness_changes"]["counter_voter"])
                 writer.writerow([
                     vote_id,
-                    result["manipulator"],
-                    preferences[result["manipulator"] - 1],
-                    hapiness_list[result["manipulator"] - 1],
-                    result["strategic_vote"],
-                    result["manipulated_outcome"],
-                    result["happiness_changes"]["manipulator"][1],
-                    Voter.calculate_total_happiness(result["happiness_changes"]["manipulator"])  # new overall happiness
+                    [result["manipulator"], result["counter_voter"]],
+                    [preferences[result["manipulator"] - 1], preferences[result["counter_voter"] - 1]],
+                    [hapiness_list[result["manipulator"] - 1], result["happiness_changes"]["counter_voter"][0]],
+                    result["strategy"],
+                    [result["strategic_vote"], result["counter_vote"]],
+                    [result["manipulated_outcome"], result["final_outcome"]],
+                    [result["happiness_changes"]["manipulator"][1], result["happiness_changes"]["counter_voter"][1]],
+                    [manip_total_hapi, counter_total_hapi]
                 ])
 
-                if "counter_voter" in result:
-                    writer.writerow([
-                        vote_id,
-                    # TODO LOOK AT LINE 135 TO UNDERSTAND HOW THE STRUCTURE WORKS
-                        result["counter_voter"],
-                        preferences[result["counter_voter"] - 1],
-                        result["happiness_changes"]["counter_voter"][0],
-                        result["counter_vote"],
-                        result["final_outcome"],
-                        result["happiness_changes"]["counter_voter"][1],
-                        Voter.calculate_total_happiness(result["happiness_changes"]["counter_voter"])  # new overall happiness
-                    ])
+                # writer.writerow([
+                #     vote_id,
+                #     result["manipulator"],
+                #     preferences[result["manipulator"] - 1],
+                #     hapiness_list[result["manipulator"] - 1],
+                #     result["strategic_vote"],
+                #     result["manipulated_outcome"],
+                #     result["happiness_changes"]["manipulator"][1],
+                #     Voter.calculate_total_happiness(result["happiness_changes"]["manipulator"])  # new overall happiness
+                # ])
+
+                # if "counter_voter" in result:
+                #     writer.writerow([
+                #         vote_id,
+                #         result["counter_voter"],
+                #         preferences[result["counter_voter"] - 1],
+                #         result["happiness_changes"]["counter_voter"][0],
+                #         result["counter_vote"],
+                #         result["final_outcome"],
+                #         result["happiness_changes"]["counter_voter"][1],
+                #         Voter.calculate_total_happiness(result["happiness_changes"]["counter_voter"])  # new overall happiness
+                #     ])
 
             elif atva_mode == "ATVA_3":
                 strategic_votes = result["strategic_vote"]
@@ -161,11 +172,11 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             vote_id,
                             voter_id,
                             preferences[voter_id-1],
-                            strategy[3],
-                            strategy[0],
-                            strategy[1],
-                            strategy[2],
-                            strategy[4]
+                            strategy["happiness"],
+                            strategy["new preference"],
+                            strategy["new outcome"],
+                            strategy["new happiness"],
+                            strategy["new total happpiness"]
                         ])
             elif atva_mode == "ATVA_4":
                 writer.writerow([
@@ -186,12 +197,23 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             vote_id,
                             voter_id,
                             preferences[voter_id-1],
-                            strategy[3],
-                            strategy[0],
-                            strategy[1],
-                            strategy[2],
-                            strategy[4]
+                            strategy["happiness"],
+                            strategy["new preference"],
+                            strategy["new outcome"],
+                            strategy["new happiness"],
+                            strategy["new total happpiness"]
                         ])
+                        # ["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"]
+
+                            # {
+                            #     "strategy":strategy,
+                            #     "new preference":new_preferences[i],
+                            #     "new outcome":new_outcome,
+                            #     "new happiness":new_hapiness_list[i],
+                            #     "happiness":hapiness_list[i],
+                            #     "new total happpiness":float(np.sum(new_hapiness_list)),
+                            #     "total happiness":float(np.sum(hapiness_list)),
+                            # }
 
 def main():
     voting_schemes = ["Plurality", "Vote For 2", "Anti-Plurality", "Borda"]

@@ -249,12 +249,12 @@ def third_screen(root):
         for voter in result["strategic_vote"]:
             tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
             for option in voter['Strategic Options']:
-                tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"New Outcome: {option[1]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"New Happiness: {option[2]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"Original Happiness: {option[3]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"Total New Happiness: {option[4]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"Total Original Happiness: {option[5]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Modified Preference: {option["new preference"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Outcome: {option["new outcome"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Happiness: {option["new happiness"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Original Happiness: {option["happiness"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total New Happiness: {option["new total happpiness"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total Original Happiness: {option["total happiness"]}", font=("Helvetica", 12)).pack()
                 tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
         
         tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
@@ -301,11 +301,11 @@ def third_screen(root):
             tk.Label(scrollable_frame, text=f"Voter {voter['Voter']}", font=("Helvetica", 12, "underline")).pack()
             for option in voter['Strategic Options']:
                 tk.Label(scrollable_frame, text=f"Modified Preference: {option[0]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"New Outcome: {option[1]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"New Happiness: {option[2]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"Original Happiness: {option[3]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"Total New Happiness: {option[4]}", font=("Helvetica", 12)).pack()
-                tk.Label(scrollable_frame, text=f"Total Original Happiness: {option[5]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Outcome: {option["new outcome"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"New Happiness: {option["new happiness"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Original Happiness: {option["happiness"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total New Happiness: {option["new total happpiness"]}", font=("Helvetica", 12)).pack()
+                tk.Label(scrollable_frame, text=f"Total Original Happiness: {option["total happiness"]}", font=("Helvetica", 12)).pack()
                 tk.Label(scrollable_frame, text="--------------------------------", font=("Helvetica", 12)).pack()
         
         tk.Label(scrollable_frame, text="Overall risk of strategic voting:", font=("Helvetica", 12, "bold")).pack(pady=5)
