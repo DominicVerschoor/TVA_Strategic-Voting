@@ -215,10 +215,7 @@ class Voter:
                         "size": len(coalition),
                         "collusion_options": coalition_options
                     })
-        
-        if strategic_options:
-            print(strategic_options[0]["collusion_options"])
-    
+            
         return strategic_options
 
     def output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):

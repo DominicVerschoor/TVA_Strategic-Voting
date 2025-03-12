@@ -213,8 +213,29 @@ def third_screen(root):
                 tk.Label(scrollable_frame, text=f"Overall Original Happiness: {option['overall_original_happiness']}", font=("Helvetica", 12)).pack(pady=5)
                 tk.Label(scrollable_frame, text="------------------------------------------------------------------------------------------------------------------------------------------------", font=("Helvetica", 12)).pack()
 
+    elif atva_mode == "ATVA_2":
+        result = Voter.output4_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        # Display the results for ATVA_2
+        tk.Label(scrollable_frame, text="Manipulator:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["manipulator"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Original Vote:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["original_vote"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Strategic Vote:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["strategic_vote"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Manipulated Outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["manipulated_outcome"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Counter Voter:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["counter_voter"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Counter Vote:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["counter_vote"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Final Outcome:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=str(result["final_outcome"]), font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text="Happiness Changes:", font=("Helvetica", 12, "bold")).pack(pady=5)
+        tk.Label(scrollable_frame, text=f"Manipulator: {result['happiness_changes']['manipulator']}", font=("Helvetica", 12)).pack(pady=5)
+        tk.Label(scrollable_frame, text=f"Counter Voter: {result['happiness_changes']['counter_voter']}", font=("Helvetica", 12)).pack(pady=5)
+        
     elif atva_mode == "ATVA_3":
-        result = Voter.ouput4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+        result = Voter.output4_atva3(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         # Display the results for ATVA_3
         tk.Label(scrollable_frame, text="First-choice counts:", font=("Helvetica", 12, "bold")).pack(pady=5)
         tk.Label(scrollable_frame, text=str(result["first_choice_counts"]), font=("Helvetica", 12)).pack(pady=5)

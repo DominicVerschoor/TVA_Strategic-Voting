@@ -44,8 +44,8 @@ def run_experiment(voting_scheme, atva_mode, count):
         # get a unique list of voter id from {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
         strategic_voters = [voter["Voter"] for voter in strategic_votes_list]
 
-        file1 = "outcome_results.csv"
-        file2 = "strategic_voting_results.csv"
+        file1 = "outcome_results_LOL.csv"
+        file2 = "strategic_voting_results_LOL.csv"
 
         vote_id = 0
 
@@ -99,6 +99,14 @@ def run_experiment(voting_scheme, atva_mode, count):
 
                 writer.writerow([
                     vote_id,
+                    voting_scheme,
+                    atva_mode,
+                    num_voters,
+                    num_candidates,
+                    outcome,
+                    hapiness_list,
+                    # TODO LOOK AT LINE 69 TO UNDERSTAND HOW THE STRUCTURE WORKS
+                    result["final_outcome"] if "final_outcome" in result else "N/A",
                     result.get("manipulator", "N/A"),
                     preferences[result["manipulator"] - 1] if "manipulator" in result else "N/A",
                     hapiness_list[result["manipulator"] - 1] if "manipulator" in result else "N/A",
@@ -156,6 +164,7 @@ def run_experiment(voting_scheme, atva_mode, count):
                 if "counter_voter" in result:
                     writer.writerow([
                         vote_id,
+                    # TODO LOOK AT LINE 135 TO UNDERSTAND HOW THE STRUCTURE WORKS
                         result["counter_voter"],
                         preferences[result["counter_voter"] - 1],
                         result["happiness_changes"]["counter_voter"][0],
