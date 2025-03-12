@@ -104,6 +104,7 @@ class Voter:
         all_permutations = list(itertools.permutations(candidate_letters))
 
         strategic_options = []
+        alternative_risk = 0
 
         for i in range(num_voters):
             voter_strategic_options = []
@@ -112,6 +113,10 @@ class Voter:
                 new_preferences[i] = list(permutation)
                 new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
                 new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+
+                happiness_gain = new_hapiness_list[i] - hapiness_list[i]
+                alternative_risk = max(alternative_risk, happiness_gain)  # Alternative risk score
+
                 if new_hapiness_list[i] > hapiness_list[i]:
                     # print(classify_strategic_vote(preferences[i], new_preferences[i]))
                     voter_strategic_options.append((
@@ -128,6 +133,8 @@ class Voter:
                     "Strategic Options": voter_strategic_options
                 })
             # print(strategic_options)
+        #  Uncomment if you want to return both strategic options and alternative risk:
+        #  return {"strategic_options": strategic_options, "alternative_risk": alternative_risk}
         return strategic_options
 
     def policy_distance_viability_gap(preferences, outcome):
