@@ -12,7 +12,6 @@ class Voter:
         pass
     def calculate_voting_outcome(voting_scheme,preferences):
         """Display the first output."""
-        # clear_screen(root)
         # create an outcome dictionary with all letter (as much as num_candidates) and set their values to 0
         outcome = {}
         num_candidates = len(preferences[0])
@@ -72,24 +71,51 @@ class Voter:
             second_half = second_half[1:]
         return first_half + second_half
 
-    def calculate_happiness(preferences, final_ranking): #https://link.springer.com/chapter/10.1007/978-3-322-80613-0_7
-        # final_ranking is a map, change final ranking into an array containing the keys of the map
+    # def calculate_happiness(preferences, final_ranking): #https://link.springer.com/chapter/10.1007/978-3-322-80613-0_7
+    #     # final_ranking is a map, change final ranking into an array containing the keys of the map
+    #     final_ranking_array = list(final_ranking.keys())
+    #     n = len(final_ranking)  # Number of candidates
+    #     happiness_scores = []
+    #     array = Voter.create_symmetric_array(n) # get the weight array
+    #     max_score = sum(x * n for x in array) # Max score
+
+    #     for voter in preferences:
+    #         if(voter[0]==final_ranking_array[0]):
+    #             pos_score = max_score
+    #         elif voter[0] not in final_ranking_array:
+    #             pos_score = sum(array[i]*(n - abs(voter.index(c) - len(final_ranking_array) + 1)) for i, c in enumerate(voter))
+    #         else:
+    #             # Compute Positional Satisfaction Score
+    #             pos_score = sum(array[i]*(n - abs(voter.index(c) - final_ranking_array.index(c))) for i, c in enumerate(voter))
+
+    #         happiness = round(pos_score/max_score,2) # Normalization step
+    #         happiness_scores.append(happiness)
+
+    #     return happiness_scores
+
+    def calculate_happiness(preferences, final_ranking):
         final_ranking_array = list(final_ranking.keys())
-        n = len(final_ranking)  # Number of candidates
+        n = len(preferences[0])  # Number of candidates
         happiness_scores = []
-        array = Voter.create_symmetric_array(n) # get the weight array
-        max_score = sum(x * n for x in array) # Max score
+        array = Voter.create_symmetric_array(n)  # Get the weight array
+        max_score = sum(x * n for x in array)  # Max score
+        min_score = sum(array[i] * 1 for i in range(n))  # Min score (candidate is last)
 
         for voter in preferences:
-            if(voter[0]==final_ranking_array[0]):
-                pos_score = max_score
-            elif voter[0] not in final_ranking_array:
-                pos_score = sum(array[i]*(n - abs(voter.index(c) - len(final_ranking_array) + 1)) for i, c in enumerate(voter))
-            else:
-                # Compute Positional Satisfaction Score
-                pos_score = sum(array[i]*(n - abs(voter.index(c) - final_ranking_array.index(c))) for i, c in enumerate(voter))
+            try:
+                if voter[0] == final_ranking_array[0]:
+                    pos_score = max_score
+                else:
+                    # Compute Positional Satisfaction Score
+                    pos_score = sum(
+                        array[i] * (n - abs(voter.index(c) - final_ranking_array.index(c)))
+                        for i, c in enumerate(voter)
+                    )
+            except ValueError:
+                # If a candidate is not found, simulate them as being last
+                pos_score = min_score
 
-            happiness = round(pos_score/max_score,2) # Normalization step
+            happiness = round(pos_score / max_score, 2)  # Normalization step
             happiness_scores.append(happiness)
 
         return happiness_scores
@@ -98,37 +124,119 @@ class Voter:
         """Display the third output."""
         return np.sum(hapiness_list)
 
-    def get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-        """Return a structured list of strategic voting options for each voter that increases their happiness level."""
-        candidate_letters = [chr(65 + i) for i in range(num_candidates)]
-        all_permutations = list(itertools.permutations(candidate_letters))
+    # def get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
+    #     """Return a structured list of strategic voting options for each voter that increases their happiness level."""
+    #     candidate_letters = [chr(65 + i) for i in range(num_candidates)]
+    #     all_permutations = list(itertools.permutations(candidate_letters))
 
+    #     strategic_options = []
+
+    #     for i in range(num_voters):
+    #         voter_strategic_options = []
+    #         for permutation in all_permutations:
+    #             new_preferences = copy.deepcopy(preferences)
+    #             new_preferences[i] = list(permutation)
+    #             new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+    #             new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+    #             if new_hapiness_list[i] > hapiness_list[i]:
+    #                 # print(classify_strategic_vote(preferences[i], new_preferences[i]))
+    #                 voter_strategic_options.append((
+    #                     new_preferences[i],
+    #                     new_outcome,
+    #                     new_hapiness_list[i],
+    #                     hapiness_list[i],
+    #                     float(np.sum(new_hapiness_list)),
+    #                     float(np.sum(hapiness_list))
+    #                 ))
+    #         if len(voter_strategic_options) != 0:
+    #             strategic_options.append({
+    #                 "Voter": i+1,
+    #                 "Strategic Options": voter_strategic_options
+    #             })
+    #         # print(strategic_options)
+    #     return strategic_options
+
+    def get_strategic_voting_options(
+        voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates
+    ):
+        """Return a structured list of strategic voting options for each voter that increases their happiness level."""
+        strategies = ["compromising", "burying", "bullet"]
         strategic_options = []
 
         for i in range(num_voters):
             voter_strategic_options = []
-            for permutation in all_permutations:
-                new_preferences = copy.deepcopy(preferences)
-                new_preferences[i] = list(permutation)
-                new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
-                new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
-                if new_hapiness_list[i] > hapiness_list[i]:
-                    # print(classify_strategic_vote(preferences[i], new_preferences[i]))
-                    voter_strategic_options.append((
-                        new_preferences[i],
-                        new_outcome,
-                        new_hapiness_list[i],
-                        hapiness_list[i],
-                        float(np.sum(new_hapiness_list)),
-                        float(np.sum(hapiness_list))
-                    ))
+            for strategy in strategies:
+                for candidate in preferences[i]:
+                    new_preferences = preferences[:]
+                    new_preferences[i] = Voter.strategic_vote(
+                        preferences[i],
+                        strategy,
+                        favored=candidate,
+                        disfavored=preferences[i][-1],
+                    )
+
+                    if new_preferences[i] == None:
+                        continue
+
+                    new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+
+                    if outcome == new_outcome:
+                        continue
+
+                    new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+                    if new_hapiness_list[i] > hapiness_list[i]:
+                        voter_strategic_options.append(
+                            {
+                                "strategy":strategy,
+                                "new preference":new_preferences[i],
+                                "new outcome":new_outcome,
+                                "new happiness":new_hapiness_list[i],
+                                "happiness":hapiness_list[i],
+                                "new total happpiness":float(np.sum(new_hapiness_list)),
+                                "total happiness":float(np.sum(hapiness_list)),
+                            }
+                        )
             if len(voter_strategic_options) != 0:
-                strategic_options.append({
-                    "Voter": i+1,
-                    "Strategic Options": voter_strategic_options
-                })
-            # print(strategic_options)
+                strategic_options.append(
+                    {"Voter": i + 1, "Strategic Options": voter_strategic_options}
+                )
         return strategic_options
+
+
+    def strategic_vote(preference, strategy, favored=None, disfavored=None):
+        """
+        Modify a voter's preference strategically.
+
+        :param preference: List of ranked candidates (e.g., ['C', 'E', 'A', 'D', 'B'])
+        :param strategy: One of 'compromising', 'burying', or 'bullet'
+        :param favored: Candidate to favor in 'compromising' or 'burying'
+        :param disfavored: Candidate to demote in 'burying'
+        :return: Modified preference list
+        """
+        new_preference = preference[:]
+
+        if strategy == "compromising" and favored:
+            # Move favored candidate higher in the ranking
+            if favored in new_preference and new_preference.index(favored) > 0:
+                new_preference.remove(favored)
+                new_preference.insert(0, favored)
+
+                return new_preference
+
+        elif strategy == "burying" and favored and disfavored:
+            # Move disfavored candidate lower in the ranking
+            if favored in new_preference and disfavored in new_preference:
+                new_preference.remove(disfavored)
+                new_preference.append(disfavored)
+
+                return new_preference
+
+        # elif strategy == "bullet":
+        #     # Only vote for the top choice
+        #     new_preference = [new_preference[0]]
+            return new_preference
+
+        return None
 
     def policy_distance_viability_gap(preferences, outcome):
         outcome_copy = outcome.copy()
@@ -174,47 +282,54 @@ class Voter:
         strategic_options = []
         candidate_letters = [chr(65 + i) for i in range(num_candidates)]
         all_permutations = list(itertools.permutations(candidate_letters))
+
+        coalition_size = 2
         
         # Consider coalitions of size 2 up to num_voters-1 (excluding single voters and all voters)
-        for coalition_size in range(2, 4): # changes the numbers here just to test it out, it should be from 2 to num_voters.
-            # Generate all possible voter coalitions of current size
-            voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
-            
-            for coalition in voter_coalitions:
-                coalition_options = []
+        # for coalition_size in range(2, 4): # changes the numbers here just to test it out, it should be from 2 to num_voters.
+        # Generate all possible voter coalitions of current size
+        voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
+        
+        for coalition in voter_coalitions:
+            coalition_options = []
+
+            highest_happiness = copy.deepcopy(hapiness_list)
+            # Try all possible preference combinations for the coalition
+            # Note: This will be computationally expensive for large coalitions
+            # If practically infeasible, I can attempt to implement some optimisation strategy
+            for perms in itertools.product(all_permutations, repeat=len(coalition)):
+                new_preferences = copy.deepcopy(preferences)
                 
-                # Try all possible preference combinations for the coalition
-                # Note: This will be computationally expensive for large coalitions
-                # If practically infeasible, I can attempt to implement some optimisation strategy
-                for perms in itertools.product(all_permutations, repeat=len(coalition)):
-                    new_preferences = copy.deepcopy(preferences)
-                    
-                    # Apply new preferences for each voter in coalition
-                    for voter_idx, new_pref in zip(coalition, perms):
-                        new_preferences[voter_idx] = list(new_pref)
-                    
-                    # Calculate new outcome with coalition votes
-                    new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
-                    new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
-                    
-                    # Check if collusion improves happiness for ALL coalition members
-                    if all(new_hapiness_list[voter] > hapiness_list[voter] for voter in coalition):
-                        coalition_options.append({
-                            "voters": [v + 1 for v in coalition],  # +1 for 1-based indexing
-                            "new_preferences": [list(p) for p in perms],
-                            "new_outcome": new_outcome,
-                            "new_happiness": [new_hapiness_list[v] for v in coalition],
-                            "original_happiness": [hapiness_list[v] for v in coalition],
-                            "overall_new_happiness": sum(new_hapiness_list),
-                            "overall_original_happiness": sum(hapiness_list)
-                        })
+                # Apply new preferences for each voter in coalition
+                for voter_idx, new_pref in zip(coalition, perms):
+                    new_preferences[voter_idx] = list(new_pref)
                 
-                if coalition_options:
-                    strategic_options.append({
-                        "coalition": [v + 1 for v in coalition],
-                        "size": len(coalition),
-                        "collusion_options": coalition_options
+                # Calculate new outcome with coalition votes
+                new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+                new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+                
+                # Check if collusion improves happiness for ALL coalition members
+                if all(new_hapiness_list[voter] > highest_happiness[voter] for voter in coalition):
+                    highest_happiness = copy.deepcopy(new_hapiness_list)
+                    coalition_options.append({
+                        "voters": [v + 1 for v in coalition],  # +1 for 1-based indexing
+                        # TODO need to add the strategy type of the strategic vote here
+                        "strategy": "STRATEGY1 AND STRATEGY2", # SINCE WE HAVE 2 PREFERENCES, THIS SHOULD HAVE 2 STRATEGIES WRITTEN INTO IT
+                        "new_preferences": [list(p) for p in perms],
+                        "new_outcome": new_outcome,
+                        "new_happiness": [new_hapiness_list[v] for v in coalition],
+                        "original_happiness": [hapiness_list[v] for v in coalition],
+                        "overall_new_happiness": sum(new_hapiness_list),
+                        "overall_original_happiness": sum(hapiness_list)
                     })
+            
+            if coalition_options:
+                strategic_options.append({
+                    "coalition": [v + 1 for v in coalition],
+                    "size": len(coalition),
+                    "collusion_options": coalition_options
+                })
+
             
         return strategic_options
 
@@ -294,6 +409,7 @@ class Voter:
         return {
             "manipulator": strategic_voter_index + 1,
             "original_vote": preferences[strategic_voter_index],
+            "strategy": "STRATEGY", # SINCE WE HAVE 2 PREFERENCES (manipulator and counter_voter), THIS SHOULD HAVE 2 STRATEGIES WRITTEN INTO IT
             "strategic_vote": best_strategy,
             "counter_voter": counter_voter_index + 1,
             "counter_vote": best_counter_strategy,
@@ -380,13 +496,13 @@ class Voter:
                 for strategic in strategic_votes_list:
                     if strategic["Voter"] == i + 1:
                         for option in strategic["Strategic Options"]:
-                            if option[2] > best_happiness:
-                                best_happiness = option[2]
+                            if option["new happiness"] > best_happiness:
+                                best_happiness = option["new happiness"]
                                 best_strategic = option
                 # Apply the best strategic vote if found
                 if best_strategic:
-                # print(f"Voter {i + 1} should use strategic vote: {best_strategic[0]} for increased happiness: {best_happiness}")
-                    best_sv_per_voter[i] = best_strategic[0]
+                # print(f"Voter {i + 1} should use strategic vote: {best_strategic["new preference"]} for increased happiness: {best_happiness}")
+                    best_sv_per_voter[i] = best_strategic["new preference"]
             
         # apply the new preferences in new_preferences
         new_preferences = preferences.copy()
