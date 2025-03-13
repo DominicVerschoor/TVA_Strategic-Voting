@@ -32,10 +32,14 @@ class Voter:
                     outcome[preference[0]] += 1
                 else:
                     outcome[preference[0]] = 1
-                if preference[1] in outcome:
-                    outcome[preference[1]] += 1
-                else:
-                    outcome[preference[1]] = 1
+
+                try:
+                    if preference[1] in outcome:
+                        outcome[preference[1]] += 1
+                    else:
+                        outcome[preference[1]] = 1
+                except IndexError:
+                    pass
 
         elif voting_scheme == "Anti-Plurality":
             for preference in preferences:
@@ -185,6 +189,9 @@ class Voter:
                         continue
 
                     new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+                    happiness_gain = new_hapiness_list[i] - hapiness_list[i]
+                    alternative_risk = max(alternative_risk, happiness_gain)
+
                     if new_hapiness_list[i] > hapiness_list[i]:
                         voter_strategic_options.append(
                             {
@@ -201,8 +208,8 @@ class Voter:
                 strategic_options.append(
                     {"Voter": i + 1, "Strategic Options": voter_strategic_options}
                 )
-        return strategic_options
-    
+        return {"strategic_options": strategic_options, "alternative_risk": alternative_risk}
+
     def get_strategic_voting_options_merged(
         voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates, tva = "btva"
     ):
@@ -210,6 +217,7 @@ class Voter:
         strategies = ["compromising", "burying", "bullet"]
         strategic_options = []
         alternative_risk = 0
+
 
         # ATVA 1 specific code:
         candidate_letters = [chr(65 + i) for i in range(num_candidates)]
@@ -303,9 +311,9 @@ class Voter:
 
                 return new_preference
 
-        # elif strategy == "bullet":
-        #     # Only vote for the top choice
-        #     new_preference = [new_preference[0]]
+        elif strategy == "bullet":
+            # Only vote for the top choice
+            new_preference = [new_preference[0]]
             return new_preference
 
         return None
@@ -541,8 +549,9 @@ class Voter:
         # print("Total happiness:", total_happiness)
         
         # Determine strategic voting options
-        strategic_vote = Voter.get_strategic_voting_options(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
-        # print("Strategic voting options:", strategic_vote)
+        strategic_opt = Voter.get_strategic_voting_options(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
+
+        strategic_vote = strategic_opt["strategic_options"]# print("Strategic voting options:", strategic_vote)
 
         risk = Voter.calculate_risk(estimated_preferences, first_choice_counts, p_pivot=0.01)
         
@@ -555,6 +564,7 @@ class Voter:
             "risk": risk
             }
         return result    
+
     def get_strategic_voting_options_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
         viable_voter = Voter.policy_distance_viability_gap(preferences, outcome)
@@ -647,7 +657,6 @@ class Voter:
             risk = gain * p_pivot
             risks.append(risk)
         return risks
-
     def classify_strategic_vote(honest_vote, strategic_vote):
         
         # Identify the top choice in both votes
