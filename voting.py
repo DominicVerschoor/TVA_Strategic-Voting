@@ -532,6 +532,7 @@ class Voter:
             "overall_hapiness": overall_hapiness,
 
             "new_outcome": new_outcome,
+            "strategies": "STRATEGIESSS",
             "strategic_votes": strategic_votes,
             "viable_voter_ids": viable_voter_ids,
             "new_hapiness_list": new_hapiness_list,
