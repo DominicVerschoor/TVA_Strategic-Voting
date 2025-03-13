@@ -210,78 +210,6 @@ class Voter:
                 )
         return {"strategic_options": strategic_options, "alternative_risk": alternative_risk}
 
-    def get_strategic_voting_options_merged(
-        voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates, tva = "btva"
-    ):
-        """Return a structured list of strategic voting options for each voter that increases their happiness level."""
-        strategies = ["compromising", "burying", "bullet"]
-        strategic_options = []
-        alternative_risk = 0
-
-
-        # ATVA 1 specific code:
-        candidate_letters = [chr(65 + i) for i in range(num_candidates)]
-        all_permutations = list(itertools.permutations(candidate_letters))
-        coalition_size = 2
-        voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
-
-        loop_range = range(num_voters) if tva == "btva" else voter_coalitions if tva == "atva 1" else range(num_voters)
-
-
-        for i in loop_range:
-            options = []
-
-            highest_happiness = copy.deepcopy(hapiness_list)
-
-            inner_range = strategies if tva == "btva" else itertools.product(all_permutations, repeat=len(i)) if tva == "atva 1" else strategies
-            for j in inner_range:
-                for candidate in preferences[i]:
-                    new_preferences = preferences[:]
-                    dc_preferences = copy.deepcopy(new_preferences) if tva != "btva" else None
-                    new_preferences[i] = Voter.strategic_vote(
-                        preferences[i],
-                        j,
-                        favored=candidate,
-                        disfavored=preferences[i][-1],
-                    ) if tva == "btva" else None
-
-                    if tva == "btva" and new_preferences[i] == None:
-                        continue
-
-                    if dc_preferences != None:
-                        # Apply new preferences for each voter in coalition
-                        for voter_idx, new_pref in zip(i, j):
-                            new_preferences[voter_idx] = list(new_pref)
-
-                    new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
-                    new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
-
-                    if tva == "btva" and outcome == new_outcome:
-                        continue
-
-                    flag = new_hapiness_list[i] > hapiness_list[i] if tva == "btva" else all(new_hapiness_list[voter] > highest_happiness[voter] for voter in i) if tva == "atva1" else False
-                    if flag:
-                        options.append(
-                            {
-                                "strategy":j,
-                                "new preference":new_preferences[i],
-                                "new outcome":new_outcome,
-                                "new happiness":new_hapiness_list[i],
-                                "happiness":hapiness_list[i],
-                                "new total happpiness":float(np.sum(new_hapiness_list)),
-                                "total happiness":float(np.sum(hapiness_list)),
-                            }
-                        )
-                        if tva == "atva1":
-                            options.append(
-
-                            )
-            if len(options) != 0:
-                strategic_options.append(
-                    {"Voter": i + 1, "Strategic Options": options}
-                )
-        return strategic_options
-
 
     def strategic_vote(preference, strategy, favored=None, disfavored=None):
         """
@@ -345,9 +273,17 @@ class Voter:
 
         return viability_gaps
     
-    def get_strategic_voting_options_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
-        """Analyzes strategic voting options considering voter collusion of various sizes.
-    
+    def get_strategic_voting_options_atva1(
+    voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates
+):
+        """
+        Analyzes strategic voting options considering voter collusion of various sizes,
+        focusing on coalition_size=2. Each voter in the coalition tries:
+        - A 2-candidate permutation (favored, disfavored)
+        - One of the strategies: compromising, burying, bullet
+
+        If *all* voters in the coalition improve their happiness, we record that scenario.
+
         Args:
             voting_scheme (str): The voting scheme being used
             outcome (dict): Current voting outcome
@@ -355,54 +291,92 @@ class Voter:
             hapiness_list (list): Current happiness scores
             num_voters (int): Number of voters
             num_candidates (int): Number of candidates
-        
+
         Returns:
-            list: Strategic voting options for colluding voter groups
+            list: Strategic voting options for colluding voter groups of size 2
+                (each entry has a "collusion_options" list describing how the
+                coalition members changed their votes and what happened).
         """
+
         strategic_options = []
         candidate_letters = [chr(65 + i) for i in range(num_candidates)]
-        all_permutations = list(itertools.permutations(candidate_letters))
 
+        # We’ll only look at coalitions of size 2 for now
         coalition_size = 2
-        
-        # Consider coalitions of size 2 up to num_voters-1 (excluding single voters and all voters)
-        # for coalition_size in range(2, 4): # changes the numbers here just to test it out, it should be from 2 to num_voters.
-        # Generate all possible voter coalitions of current size
         voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
-        
+
+        # Possible strategies each voter might attempt
+        strategies = ["compromising", "burying", "bullet"]
+
         for coalition in voter_coalitions:
             coalition_options = []
 
+            # Keep track of the "best" happiness we've seen so far for this coalition
             highest_happiness = copy.deepcopy(hapiness_list)
-            # Try all possible preference combinations for the coalition
-            # Note: This will be computationally expensive for large coalitions
-            # If practically infeasible, I can attempt to implement some optimisation strategy
-            for perms in list(itertools.permutations(candidate_letters, 2)):
-                new_preferences = copy.deepcopy(preferences)
-                
-                # Apply new preferences for each voter in coalition
-                for voter_idx, new_pref in zip(coalition, perms):
-                    new_preferences[voter_idx] = list(new_pref)
-                
-                # Calculate new outcome with coalition votes
-                new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
-                new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
-                
-                # Check if collusion improves happiness for ALL coalition members
-                if all(new_hapiness_list[voter] > highest_happiness[voter] for voter in coalition):
-                    highest_happiness = copy.deepcopy(new_hapiness_list)
-                    coalition_options.append({
-                        "voters": [v + 1 for v in coalition],  # +1 for 1-based indexing
-                        # TODO need to add the strategy type of the strategic vote here
-                        "strategy": "STRATEGY1 AND STRATEGY2", # SINCE WE HAVE 2 PREFERENCES, THIS SHOULD HAVE 2 STRATEGIES WRITTEN INTO IT
-                        "new_preferences": [list(p) for p in perms],
-                        "new_outcome": new_outcome,
-                        "new_happiness": [new_hapiness_list[v] for v in coalition],
-                        "original_happiness": [hapiness_list[v] for v in coalition],
-                        "overall_new_happiness": sum(new_hapiness_list),
-                        "overall_original_happiness": sum(hapiness_list)
-                    })
-            
+
+            # 1) For each voter in the coalition, pick a 2-candidate permutation (favored, disfavored).
+            #    "perms" is a tuple like (("A","B"), ("C","D")) if the coalition has 2 voters.
+            two_candidate_perms = itertools.permutations(candidate_letters, 2)
+            for perms in itertools.product(two_candidate_perms, repeat=len(coalition)):
+
+                # 2) For each voter in the coalition, also pick a strategy
+                #    e.g. ("compromising", "burying"), meaning first voter uses "compromising",
+                #    second voter uses "burying"
+                for strategy_combo in itertools.product(strategies, repeat=len(coalition)):
+
+                    new_preferences = copy.deepcopy(preferences)
+                    strategy_texts = []
+                    broke_early = False  # If a strategic_vote() fails, we skip this combo
+
+                    # Apply each voter’s strategic vote
+                    for (voter_idx, (favored, disfavored), strat) in zip(coalition, perms, strategy_combo):
+                        original_pref = new_preferences[voter_idx]
+
+                        # Attempt the strategic vote
+                        new_vote = Voter.strategic_vote(
+                            preference=original_pref,
+                            strategy=strat,
+                            favored=favored,
+                            disfavored=disfavored
+                        )
+                        # If the strategy returned None, it means it wasn't applicable
+                        if new_vote is None:
+                            broke_early = True
+                            break
+
+                        # Update this voter's preference with the strategic version
+                        new_preferences[voter_idx] = new_vote
+                        strategy_texts.append(strat)
+
+                    # If any voter’s strategic_vote was None, skip the rest
+                    if broke_early:
+                        continue
+
+                    # 3) Calculate new outcome and happiness
+                    new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+                    new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+
+                    # 4) Check if *all* members of the coalition improved their happiness
+                    if all(new_hapiness_list[v] > highest_happiness[v] for v in coalition):
+                        highest_happiness = copy.deepcopy(new_hapiness_list)
+
+                        # Combine each voter’s strategy into a single string
+                        # e.g. "compromising AND burying"
+                        combined_strategies = " AND ".join(strategy_texts)
+
+                        # Store details about this successful collusion scenario
+                        coalition_options.append({
+                            "voters": [v + 1 for v in coalition],  # 1-based indexing
+                            "strategy": combined_strategies,
+                            "new_preferences": [new_preferences[v] for v in coalition],
+                            "new_outcome": new_outcome,
+                            "new_happiness": [new_hapiness_list[v] for v in coalition],
+                            "original_happiness": [hapiness_list[v] for v in coalition],
+                            "overall_new_happiness": float(np.sum(new_hapiness_list)),
+                            "overall_original_happiness": float(np.sum(hapiness_list))
+                        })
+
+            # If this coalition found at least one beneficial scenario, store it
             if coalition_options:
                 strategic_options.append({
                     "coalition": [v + 1 for v in coalition],
@@ -410,7 +384,6 @@ class Voter:
                     "collusion_options": coalition_options
                 })
 
-            
         return strategic_options
 
     def get_strategic_voting_options_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates):
