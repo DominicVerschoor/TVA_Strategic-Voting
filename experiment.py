@@ -16,7 +16,9 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
         outcome = Voter.calculate_voting_outcome(voting_scheme, preferences)  # Outcome
         hapiness_list = Voter.calculate_happiness(preferences, outcome)  # Happiness list
         overall_hapiness = Voter.calculate_total_happiness(hapiness_list)  # Overall happiness
-        strategic_votes_list = Voter.get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)  # list of the form: {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
+        strategic_opt = Voter.get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)  # list of the form: {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
+        strategic_votes_list = strategic_opt["strategic_options"]
+        alternative_risk = strategic_opt["alternative_risk"]
         risk = Voter.calculate_risk(preferences, outcome, p_pivot=0.01)  # Overall risk
         pairs = None
 
@@ -45,7 +47,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
         with open(file1, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             if not file1_exists:
-                writer.writerow(["vote_id", "voting_scheme", "limitation_dropped", "num_voters", "num_candidates", "outcome", "hapiness_list", "overall_hapiness", "strategic_voters", "risk_of_strategic_voting", "pairs"])
+                writer.writerow(["vote_id", "voting_scheme", "limitation_dropped", "num_voters", "num_candidates", "outcome", "hapiness_list", "overall_hapiness", "strategic_voters", "risk_of_strategic_voting", "alternative_risk", "pairs"])
             
             if file1_exists:
                 # read last row
@@ -63,7 +65,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                         coalition_pairs.append(tuple(result[i]["coalition"]))
                     pairs = list(set(coalition_pairs))
                 
-                writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, pairs])
+                writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, alternative_risk, pairs])
 
 
             elif atva_mode == "ATVA_2":
@@ -88,19 +90,20 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                     overall_hapiness,
                     [result["manipulator"], result["counter_voter"]],
                     risk, # TODO NEED TO VERIFY THIS
+                    alternative_risk,
                     [result["manipulator"], result["counter_voter"]], # # TODO NEED TO VERIFY THIS
                 ])
 
 
             elif atva_mode == "ATVA_3":
                 strategic_voters = [voter["Voter"] for voter in result["strategic_vote"]]
-                writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, result["first_choice_counts"], result["happiness_list"], result["total_happiness"], strategic_voters, result["risk"], pairs])
+                writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, result["first_choice_counts"], result["happiness_list"], result["total_happiness"], strategic_voters, result["risk"], alternative_risk, pairs])
 
             elif atva_mode == "ATVA_4":
-                writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, result["viable_voter_ids"], risk, pairs])
+                writer.writerow([vote_id, voting_scheme, atva_mode, num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, result["viable_voter_ids"], risk, alternative_risk,  pairs])
 
             else:
-                writer.writerow([vote_id, voting_scheme, "BTVA", num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, pairs])
+                writer.writerow([vote_id, voting_scheme, "BTVA", num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, alternative_risk, pairs])
 
         # Write strategic voting results to CSV
         with open(file2, 'a', newline='') as csvfile:
