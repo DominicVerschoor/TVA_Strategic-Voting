@@ -136,7 +136,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                     [result["manipulator"], result["counter_voter"]],
                     [preferences[result["manipulator"] - 1], preferences[result["counter_voter"] - 1]],
                     [hapiness_list[result["manipulator"] - 1], result["happiness_changes"]["counter_voter"][0]],
-                    result["strategy"],
+                    result["strategy_used"],
                     [result["strategic_vote"], result["counter_vote"]],
                     [result["manipulated_outcome"], result["final_outcome"]],
                     [result["happiness_changes"]["manipulator"][1], result["happiness_changes"]["counter_voter"][1]],
