@@ -2,6 +2,9 @@ import random
 import csv
 import os
 from voting import Voter
+import sys
+import contextlib
+from multiprocessing import Pool
 
 def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iterations):
     # Generate random numbers of voters and candidates
@@ -25,8 +28,8 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
         # get a unique list of voter id from {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
         strategic_voters = [voter["Voter"] for voter in strategic_votes_list]
 
-        file1 =          "outcome_results.csv"
-        file2 = "strategic_voting_results.csv"
+        file1 =          f"outcome_results_{num_voters}_{num_candidates}.csv"
+        file2 = f"strategic_voting_results_{num_voters}_{num_candidates}.csv"
 
         vote_id = 0
 
@@ -221,14 +224,10 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             #     "total happiness":float(np.sum(hapiness_list)),
                             # }
 
-def main():
+def main(num_voters = 5, num_candidates = 4):
+    num_iterations = 10
     voting_schemes = ["Plurality", "Vote For 2", "Anti-Plurality", "Borda"]
     atva_modes = ["BTVA", "ATVA_1", "ATVA_2", "ATVA_3", "ATVA_4"]
-
-    num_voters = 5
-    num_candidates = 4
-
-    num_iterations = 10
 
     for voting_scheme in voting_schemes:
         print("Voting Scheme:", voting_scheme)
@@ -238,5 +237,22 @@ def main():
             print("__________________________________________________________________________________________________________________________")
             run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iterations)
 
+
+def parallel_main(num_voters, num_candidates):
+    """
+    Wrapper that redirects all prints (stdout/stderr) to a per-run log file,
+    then calls main(...) with those parameters.
+    """
+    log_filename = f"experiment_{num_voters}_{num_candidates}.log"
+    with open(log_filename, 'w') as log_file, \
+         contextlib.redirect_stdout(log_file), \
+         contextlib.redirect_stderr(log_file):
+        # Now any print statements (and errors) go to experiment_XXX_YYY.log
+        main(num_voters, num_candidates)
+
 if __name__ == "__main__":
-    main()
+    #param_combinations = [(v, c) for v in [50, 150, 500] for c in [3, 4, 5]]
+    param_combinations = [(50, 5)] + [(150, c) for c in [3, 4, 5]]
+
+    with Pool() as pool:
+        pool.starmap(parallel_main, param_combinations)
