@@ -392,32 +392,43 @@ class Voter:
         We assume that only one voter can strategically vote and only one voter can counter the strategic voter
         """
 
-        candidates = [chr(65 + i) for i in range(num_candidates)]  # get candidates
-        all_permutations = list(itertools.permutations(candidates))  # get all permutations of candidate orderings
-
+        strategies = ["compromising", "burying", "bullet"]
         best_strategy = None
         best_happiness_gain = 0
-        strategic_voter_index = None
+        manipulator_index = None
+        best_strategy_name = None  # Store the strategy used
 
         # Find the best strategic move
         for i in range(num_voters):
-            for perm in all_permutations:
-                new_preferences = copy.deepcopy(preferences)
-                new_preferences[i] = list(perm)  # strategic vote
+            for strategy in strategies:
+                for candidate in preferences[i]:
+                    new_preferences = copy.deepcopy(preferences)
+                    new_preferences[i] = Voter.strategic_vote(
+                        preferences[i],
+                        strategy,
+                        favored=candidate,
+                        disfavored=preferences[i][-1]
+                    )
+
+                    if new_preferences[i] is None:
+                        continue  # Skip if no valid strategic vote
+
                 new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
                 new_happiness_list = Voter.calculate_happiness(preferences, new_outcome)  # happiness after strategic vote
                 happiness_gain = new_happiness_list[i] - hapiness_list[i]
+
                 if happiness_gain > best_happiness_gain:
                     best_happiness_gain = happiness_gain
-                    best_strategy = list(perm)
-                    strategic_voter_index = i
+                    best_strategy = new_preferences[i]
+                    manipulator_index = i
+                    best_strategy_name = strategy
 
         if best_strategy is None:
             return {"message": "No beneficial strategic move found."}
 
         # Apply the strategic vote
         new_preferences = copy.deepcopy(preferences)
-        new_preferences[strategic_voter_index] = best_strategy
+        new_preferences[manipulator_index] = best_strategy
         manipulated_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
         manipulated_happiness_list = Voter.calculate_happiness(preferences, manipulated_outcome)
 
@@ -425,14 +436,25 @@ class Voter:
         best_counter_strategy = None
         best_counter_gain = 0
         counter_voter_index = None
+        best_counter_strategy_name = None
 
         for j in range(num_voters):
-            if j == strategic_voter_index:
+            if j == manipulator_index:
                 continue  # skip the strategic voter
 
-            for perm in all_permutations:
-                counter_preferences = copy.deepcopy(new_preferences)
-                counter_preferences[j] = list(perm)  # counter-strategic vote
+            for strategy in strategies:
+                for candidate in preferences[j]:
+                    counter_preferences = copy.deepcopy(new_preferences)
+                    counter_preferences[j] = Voter.strategic_vote(
+                        preferences[j],
+                        strategy,
+                        favored=candidate,
+                        disfavored=preferences[j][-1]
+                    )
+
+                    if counter_preferences[j] is None:
+                        continue
+
                 counter_outcome = Voter.calculate_voting_outcome(voting_scheme, counter_preferences)
                 counter_happiness_list = Voter.calculate_happiness(preferences, counter_outcome)
 
@@ -441,13 +463,14 @@ class Voter:
 
                 if counter_gain > best_counter_gain:
                     best_counter_gain = counter_gain
-                    best_counter_strategy = list(perm)
+                    best_counter_strategy = counter_preferences[j]
                     counter_voter_index = j
+                    best_counter_strategy_name = strategy
 
         if best_counter_strategy is None:
             return {
-                "manipulator": strategic_voter_index + 1,
-                "original_vote": preferences[strategic_voter_index],
+                "manipulator": manipulator_index + 1,
+                "original_vote": preferences[manipulator_index],
                 "strategic_vote": best_strategy,
                 "manipulated_outcome": manipulated_outcome,
                 "message": "No counter-strategy found."
@@ -460,19 +483,20 @@ class Voter:
         final_happiness_list = Voter.calculate_happiness(preferences, final_outcome)
 
         return {
-            "manipulator": strategic_voter_index + 1,
-            "original_vote": preferences[strategic_voter_index],
-            "strategy": "STRATEGY", # SINCE WE HAVE 2 PREFERENCES (manipulator and counter_voter), THIS SHOULD HAVE 2 STRATEGIES WRITTEN INTO IT
+            "manipulator": manipulator_index + 1,
+            "original_vote": preferences[manipulator_index],
             "strategic_vote": best_strategy,
+            "strategy_used": best_strategy_name,  # Return the strategy used
             "counter_voter": counter_voter_index + 1,
             "counter_vote": best_counter_strategy,
+            "counter_strategy_used": best_counter_strategy_name,  # Return counter strategy name
             "manipulated_outcome": manipulated_outcome,
             "final_outcome": final_outcome,
             "happiness_changes": {
-                "manipulator": (
-                hapiness_list[strategic_voter_index], manipulated_happiness_list[strategic_voter_index]),
+                "manipulator": (hapiness_list[manipulator_index], manipulated_happiness_list[manipulator_index]),
                 "counter_voter": (
-                    manipulated_happiness_list[counter_voter_index], final_happiness_list[counter_voter_index])
+                    manipulated_happiness_list[counter_voter_index], final_happiness_list[counter_voter_index]
+                )
             }
         }
     
@@ -524,7 +548,7 @@ class Voter:
         # Determine strategic voting options
         strategic_opt = Voter.get_strategic_voting_options(voting_scheme, outcome, estimated_preferences, happiness_list, num_voters, num_candidates)
 
-        strategic_vote = strategic_opt["strategic_options"]# print("Strategic voting options:", strategic_vote)
+        strategic_vote = strategic_opt["strategic_options"] # print("Strategic voting options:", strategic_vote)
 
         risk = Voter.calculate_risk(estimated_preferences, first_choice_counts, p_pivot=0.01)
         
