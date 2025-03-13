@@ -124,7 +124,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                                 coalition["strategy"],
                                 coalition["new_preferences"],
                                 coalition["new_outcome"],
-                                coalition["new_happiness"],
+                                coalition["new_happiness_list"],
                                 coalition["overall_new_happiness"]
                             ])
             elif atva_mode == "ATVA_2":
@@ -139,7 +139,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                     result["strategy_used"],
                     [result["strategic_vote"], result["counter_vote"]],
                     [result["manipulated_outcome"], result["final_outcome"]],
-                    [result["happiness_changes"]["manipulator"][1], result["happiness_changes"]["counter_voter"][1]],
+                    [result["happiness_changes"]["manipulator"], result["happiness_changes"]["counter_voter"]],
                     [manip_total_hapi, counter_total_hapi]
                 ])
 
@@ -179,7 +179,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             strategy["strategy"],
                             strategy["new preference"],
                             strategy["new outcome"],
-                            strategy["new happiness"],
+                            strategy["new happiness list"],
                             strategy["new total happpiness"]
                         ])
             elif atva_mode == "ATVA_4":
@@ -206,7 +206,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             strategy["strategy"],
                             strategy["new preference"],
                             strategy["new outcome"],
-                            strategy["new happiness"],
+                            strategy["new happiness list"],
                             strategy["new total happpiness"]
                         ])
                         # ["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"]

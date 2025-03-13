@@ -198,7 +198,7 @@ class Voter:
                                 "strategy":strategy,
                                 "new preference":new_preferences[i],
                                 "new outcome":new_outcome,
-                                "new happiness":new_hapiness_list[i],
+                                "new happiness list":new_hapiness_list,
                                 "happiness":hapiness_list[i],
                                 "new total happpiness":float(np.sum(new_hapiness_list)),
                                 "total happiness":float(np.sum(hapiness_list)),
@@ -370,7 +370,7 @@ class Voter:
                             "strategy": combined_strategies,
                             "new_preferences": [new_preferences[v] for v in coalition],
                             "new_outcome": new_outcome,
-                            "new_happiness": [new_hapiness_list[v] for v in coalition],
+                            "new_happiness_list": new_hapiness_list,
                             "original_happiness": [hapiness_list[v] for v in coalition],
                             "overall_new_happiness": float(np.sum(new_hapiness_list)),
                             "overall_original_happiness": float(np.sum(hapiness_list))
@@ -575,8 +575,8 @@ class Voter:
                 for strategic in strategic_votes_list:
                     if strategic["Voter"] == i + 1:
                         for option in strategic["Strategic Options"]:
-                            if option["new happiness"] > best_happiness:
-                                best_happiness = option["new happiness"]
+                            if option["new happiness list"][i] > best_happiness:
+                                best_happiness = option["new happiness list"][i]
                                 best_strategic = option
                 # Apply the best strategic vote if found
                 if best_strategic:
