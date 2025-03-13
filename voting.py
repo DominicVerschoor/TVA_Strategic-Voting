@@ -202,6 +202,77 @@ class Voter:
                     {"Voter": i + 1, "Strategic Options": voter_strategic_options}
                 )
         return strategic_options
+    
+    def get_strategic_voting_options_merged(
+        voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates, tva = "btva"
+    ):
+        """Return a structured list of strategic voting options for each voter that increases their happiness level."""
+        strategies = ["compromising", "burying", "bullet"]
+        strategic_options = []
+        alternative_risk = 0
+
+        # ATVA 1 specific code:
+        candidate_letters = [chr(65 + i) for i in range(num_candidates)]
+        all_permutations = list(itertools.permutations(candidate_letters))
+        coalition_size = 2
+        voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
+
+        loop_range = range(num_voters) if tva == "btva" else voter_coalitions if tva == "atva 1" else range(num_voters)
+
+
+        for i in loop_range:
+            options = []
+
+            highest_happiness = copy.deepcopy(hapiness_list)
+
+            inner_range = strategies if tva == "btva" else itertools.product(all_permutations, repeat=len(i)) if tva == "atva 1" else strategies
+            for j in inner_range:
+                for candidate in preferences[i]:
+                    new_preferences = preferences[:]
+                    dc_preferences = copy.deepcopy(new_preferences) if tva != "btva" else None
+                    new_preferences[i] = Voter.strategic_vote(
+                        preferences[i],
+                        j,
+                        favored=candidate,
+                        disfavored=preferences[i][-1],
+                    ) if tva == "btva" else None
+
+                    if tva == "btva" and new_preferences[i] == None:
+                        continue
+
+                    if dc_preferences != None:
+                        # Apply new preferences for each voter in coalition
+                        for voter_idx, new_pref in zip(i, j):
+                            new_preferences[voter_idx] = list(new_pref)
+
+                    new_outcome = Voter.calculate_voting_outcome(voting_scheme, new_preferences)
+                    new_hapiness_list = Voter.calculate_happiness(preferences, new_outcome)
+
+                    if tva == "btva" and outcome == new_outcome:
+                        continue
+
+                    flag = new_hapiness_list[i] > hapiness_list[i] if tva == "btva" else all(new_hapiness_list[voter] > highest_happiness[voter] for voter in i) if tva == "atva1" else False
+                    if flag:
+                        options.append(
+                            {
+                                "strategy":j,
+                                "new preference":new_preferences[i],
+                                "new outcome":new_outcome,
+                                "new happiness":new_hapiness_list[i],
+                                "happiness":hapiness_list[i],
+                                "new total happpiness":float(np.sum(new_hapiness_list)),
+                                "total happiness":float(np.sum(hapiness_list)),
+                            }
+                        )
+                        if tva == "atva1":
+                            options.append(
+
+                            )
+            if len(options) != 0:
+                strategic_options.append(
+                    {"Voter": i + 1, "Strategic Options": options}
+                )
+        return strategic_options
 
 
     def strategic_vote(preference, strategy, favored=None, disfavored=None):
@@ -298,7 +369,7 @@ class Voter:
             # Try all possible preference combinations for the coalition
             # Note: This will be computationally expensive for large coalitions
             # If practically infeasible, I can attempt to implement some optimisation strategy
-            for perms in itertools.product(all_permutations, repeat=len(coalition)):
+            for perms in list(itertools.permutations(candidate_letters, 2)):
                 new_preferences = copy.deepcopy(preferences)
                 
                 # Apply new preferences for each voter in coalition
