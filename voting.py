@@ -362,12 +362,12 @@ class Voter:
 
                         # Combine each voter’s strategy into a single string
                         # e.g. "compromising AND burying"
-                        combined_strategies = " AND ".join(strategy_texts)
+                        # combined_strategies = " AND ".join(strategy_texts)
 
                         # Store details about this successful collusion scenario
                         coalition_options.append({
                             "voters": [v + 1 for v in coalition],  # 1-based indexing
-                            "strategy": combined_strategies,
+                            "strategy": strategy_texts,
                             "new_preferences": [new_preferences[v] for v in coalition],
                             "new_outcome": new_outcome,
                             "new_happiness_list": new_hapiness_list,
@@ -566,6 +566,7 @@ class Voter:
 
         viable_voter = Voter.policy_distance_viability_gap(preferences, outcome)
         best_sv_per_voter = {}
+        strategy_names = []
         # Select the best strategic vote for all users whose index in viable_voter is true
         for i in range(len(viable_voter)):
             if viable_voter[i]:
@@ -582,6 +583,7 @@ class Voter:
                 if best_strategic:
                 # print(f"Voter {i + 1} should use strategic vote: {best_strategic["new preference"]} for increased happiness: {best_happiness}")
                     best_sv_per_voter[i] = best_strategic["new preference"]
+                    strategy_names.append(best_strategic["strategy"])
             
         # apply the new preferences in new_preferences
         new_preferences = preferences.copy()
@@ -597,12 +599,8 @@ class Voter:
         new_overall_hapiness = Voter.calculate_total_happiness(new_hapiness_list)
         viable_voter_ids = list(best_sv_per_voter.keys())
         viable_voter_ids = [x + 1 for x in viable_voter_ids]
-
-        # create an output
-        result = [  outcome, preferences, hapiness_list, overall_hapiness, 
-                    new_outcome, new_preferences, viable_voter_ids, new_hapiness_list, new_overall_hapiness]
         
-        # change to dict
+        # create an output
         result = {
             "outcome": outcome,
             "preferences": preferences,
@@ -610,7 +608,7 @@ class Voter:
             "overall_hapiness": overall_hapiness,
 
             "new_outcome": new_outcome,
-            "strategies": "STRATEGIESSS",
+            "strategies": strategy_names,
             "strategic_votes": strategic_votes,
             "viable_voter_ids": viable_voter_ids,
             "new_hapiness_list": new_hapiness_list,
