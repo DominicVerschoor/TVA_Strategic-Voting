@@ -32,10 +32,14 @@ class Voter:
                     outcome[preference[0]] += 1
                 else:
                     outcome[preference[0]] = 1
-                if preference[1] in outcome:
-                    outcome[preference[1]] += 1
-                else:
-                    outcome[preference[1]] = 1
+                    
+                try:
+                    if preference[1] in outcome:
+                        outcome[preference[1]] += 1
+                    else:
+                        outcome[preference[1]] = 1
+                except IndexError:
+                    pass
 
         elif voting_scheme == "Anti-Plurality":
             for preference in preferences:
@@ -232,9 +236,9 @@ class Voter:
 
                 return new_preference
 
-        # elif strategy == "bullet":
-        #     # Only vote for the top choice
-        #     new_preference = [new_preference[0]]
+        elif strategy == "bullet":
+            # Only vote for the top choice
+            new_preference = [new_preference[0]]
             return new_preference
 
         return None
@@ -484,6 +488,7 @@ class Voter:
             "risk": risk
             }
         return result    
+    
     def get_strategic_voting_options_atva4(voting_scheme, preferences, outcome, strategic_votes_list, hapiness_list, overall_hapiness):
 
         viable_voter = Voter.policy_distance_viability_gap(preferences, outcome)
