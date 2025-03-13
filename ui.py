@@ -196,7 +196,9 @@ def third_screen(root):
     outcome = Voter.calculate_voting_outcome(voting_scheme, preferences)
     hapiness_list = Voter.calculate_happiness(preferences, outcome)
     overall_hapiness = Voter.calculate_total_happiness(hapiness_list)
-    strategic_votes_list = Voter.get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+    strategic_opt = Voter.get_strategic_voting_options(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)  # list of the form: {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
+    strategic_votes_list = strategic_opt["strategic_options"]
+    alternative_risk = strategic_opt["alternative_risk"]
     risk = Voter.calculate_risk(preferences, outcome, p_pivot=0.01)
 
     if atva_mode == "ATVA_1":
