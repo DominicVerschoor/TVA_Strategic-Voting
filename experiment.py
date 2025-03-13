@@ -143,7 +143,8 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                     [result["strategic_vote"], result["counter_vote"]],
                     [result["manipulated_outcome"], result["final_outcome"]],
                     [result["happiness_changes"]["manipulator"], result["happiness_changes"]["counter_voter"]],
-                    [manip_total_hapi, counter_total_hapi]
+                    float(counter_total_hapi)
+                    # [float(manip_total_hapi), float(counter_total_hapi)]
                 ])
 
                 # writer.writerow([
