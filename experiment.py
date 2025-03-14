@@ -109,7 +109,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                 writer.writerow([vote_id, voting_scheme, "BTVA", num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, alternative_risk, pairs])
 
         # Write strategic voting results to CSV
-        """with open(file2, 'a', newline='') as csvfile:
+        with open(file2, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             if not file2_exists:
                 writer.writerow(["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategy", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"])
@@ -223,7 +223,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             #     "happiness":hapiness_list[i],
                             #     "new total happpiness":float(np.sum(new_hapiness_list)),
                             #     "total happiness":float(np.sum(hapiness_list)),
-                            # }"""
+                            # }
 
 def main(num_voters = 5, num_candidates = 4):
     num_iterations = 10
@@ -252,7 +252,7 @@ def parallel_main(num_voters, num_candidates):
         main(num_voters, num_candidates)
 
 if __name__ == "__main__":
-    param_combinations = [(v, c) for v in [200] for c in [3, 4, 5]]
+    param_combinations = [(v, c) for v in [10] for c in [3]]
     #param_combinations = [(150, 4)] + [(150, 500)]#+ [(150, 5)]
 
     with Pool() as pool:
