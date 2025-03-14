@@ -273,6 +273,145 @@ class Voter:
 
         return viability_gaps
     
+    def get_strategic_voting_options_atva1_branch_and_bound(
+        voting_scheme,
+        outcome,
+        preferences,
+        original_happiness_list,
+        num_voters,
+        num_candidates
+    ):
+        """
+        Branch-and-bound approach for collusion of size=2.
+        
+        Returns:
+          A list of collusion results, each with "coalition" and "collusion_options".
+        """
+
+        # We'll consider only coalitions of size 2
+        coalition_size = 2
+        voter_coalitions = list(itertools.combinations(range(num_voters), coalition_size))
+
+        strategies = ["compromising", "burying", "bullet"]
+        candidate_letters = [chr(65 + i) for i in range(num_candidates)]
+
+        # All possible (favored, disfavored) pairs (you can prune or limit these).
+        all_favored_disfavored = []
+        for fav in candidate_letters:
+            for dis in candidate_letters:
+                if fav != dis:
+                    all_favored_disfavored.append((fav, dis))
+
+        strategic_options = []
+
+        def backtrack_strategic_votes(
+            coalition, 
+            idx, 
+            current_prefs, 
+            assigned_strategies, 
+            best_hap_list, 
+            final_solutions
+        ):
+            """
+            Recursive helper to assign each voter in the coalition one by one.
+            - coalition: tuple of voter indices
+            - idx: which coalition member's turn we're on (0 or 1 in size=2)
+            - current_prefs: current copy of preferences (modified in-place)
+            - assigned_strategies: list of (strategy, favored, disfavored) for each assigned voter
+            - best_hap_list: original happiness array we compare against
+            - final_solutions: accumulates final successful scenarios
+            """
+            # If all coalition members are assigned
+            if idx == len(coalition):
+                # Check final outcome for improvement
+                new_outcome = Voter.calculate_voting_outcome(voting_scheme, current_prefs)
+                new_hap = Voter.calculate_happiness(preferences, new_outcome)
+                # All coalition members must be strictly better off
+                if all(new_hap[v] > best_hap_list[v] for v in coalition):
+                    final_solutions.append({
+                        "voters": [v + 1 for v in coalition],  # 1-based indexing
+                        "strategy": [x[0] for x in assigned_strategies],
+                        "favored_disfavored": [(x[1], x[2]) for x in assigned_strategies],
+                        "new_preferences": [current_prefs[v] for v in coalition],
+                        "new_outcome": new_outcome,
+                        "new_happiness_list": new_hap,
+                        "original_happiness": [best_hap_list[v] for v in coalition],
+                        "overall_new_happiness": float(np.sum(new_hap)),
+                        "overall_original_happiness": float(np.sum(best_hap_list))
+                    })
+                return
+
+            voter_idx = coalition[idx]
+
+            # Try every (strategy, favored, disfavored)
+            for strategy in strategies:
+                for (favored, disfavored) in all_favored_disfavored:
+                    old_pref = current_prefs[voter_idx]
+                    new_vote = Voter.strategic_vote(
+                        old_pref, 
+                        strategy, 
+                        favored=favored, 
+                        disfavored=disfavored
+                    )
+                    if new_vote is None:
+                        continue
+
+                    # Update
+                    current_prefs[voter_idx] = new_vote
+
+                    # Early prune: check this voter's happiness
+                    partial_outcome = Voter.calculate_voting_outcome(voting_scheme, current_prefs)
+                    partial_hap = Voter.calculate_happiness(preferences, partial_outcome)
+
+                    # If not better, prune
+                    if partial_hap[voter_idx] <= best_hap_list[voter_idx]:
+                        current_prefs[voter_idx] = old_pref
+                        continue
+
+                    # Otherwise, continue recursion
+                    assigned_strategies.append((strategy, favored, disfavored))
+                    backtrack_strategic_votes(
+                        coalition, 
+                        idx + 1, 
+                        current_prefs, 
+                        assigned_strategies, 
+                        best_hap_list, 
+                        final_solutions
+                    )
+                    # backtrack
+                    assigned_strategies.pop()
+                    current_prefs[voter_idx] = old_pref
+
+        # Main loop over each size=2 coalition
+        for coalition in voter_coalitions:
+            coalition_options = []
+            # We'll compare against the original_happiness_list
+            # so each coalition member must exceed original_happiness_list[v].
+            final_solutions_for_coalition = []
+            current_prefs = copy.deepcopy(preferences)
+
+            # Start recursion
+            backtrack_strategic_votes(
+                coalition=coalition,
+                idx=0,
+                current_prefs=current_prefs,
+                assigned_strategies=[],
+                best_hap_list=original_happiness_list,
+                final_solutions=final_solutions_for_coalition
+            )
+
+            if final_solutions_for_coalition:
+                coalition_options.extend(final_solutions_for_coalition)
+
+            if coalition_options:
+                strategic_options.append({
+                    "coalition": [v + 1 for v in coalition],
+                    "size": coalition_size,
+                    "collusion_options": coalition_options
+                })
+
+        return strategic_options
+    
     def get_strategic_voting_options_atva1(
     voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates
 ):

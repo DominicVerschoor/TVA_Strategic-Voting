@@ -28,14 +28,14 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
         # get a unique list of voter id from {"Voter":voter_id, "Strategic Options":(strategic_vote, new_outcome, new_hapiness_score, hapiness_score, new_overall_hapiness, overall_hapiness)}
         strategic_voters = [voter["Voter"] for voter in strategic_votes_list]
 
-        file1 =          f"outcome_results_{num_voters}_{num_candidates}.csv"
-        file2 = f"strategic_voting_results_{num_voters}_{num_candidates}.csv"
+        file1 =          f"outcome_results_{num_voters}_{num_candidates}_bb__new2.csv"
+        file2 = f"strategic_voting_results_{num_voters}_{num_candidates}_bb__new2.csv"
 
         vote_id = 0
 
         result = None
         if atva_mode == "ATVA_1":
-            result = Voter.get_strategic_voting_options_atva1(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
+            result = Voter.get_strategic_voting_options_atva1_branch_and_bound(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         elif atva_mode == "ATVA_2":
             result = Voter.get_strategic_voting_options_atva2(voting_scheme, outcome, preferences, hapiness_list, num_voters, num_candidates)
         elif atva_mode == "ATVA_3":
@@ -109,7 +109,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                 writer.writerow([vote_id, voting_scheme, "BTVA", num_voters, num_candidates, outcome, hapiness_list, overall_hapiness, strategic_voters, risk, alternative_risk, pairs])
 
         # Write strategic voting results to CSV
-        with open(file2, 'a', newline='') as csvfile:
+        """with open(file2, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             if not file2_exists:
                 writer.writerow(["vote_id", "voter_id", "honest_vote", "hapiness_score", "strategy", "strategic_vote", "new_outcome", "new_hapiness_score", "new_overall_hapiness"])
@@ -223,7 +223,7 @@ def run_experiment(voting_scheme, atva_mode, num_voters,num_candidates, num_iter
                             #     "happiness":hapiness_list[i],
                             #     "new total happpiness":float(np.sum(new_hapiness_list)),
                             #     "total happiness":float(np.sum(hapiness_list)),
-                            # }
+                            # }"""
 
 def main(num_voters = 5, num_candidates = 4):
     num_iterations = 10
@@ -252,8 +252,8 @@ def parallel_main(num_voters, num_candidates):
         main(num_voters, num_candidates)
 
 if __name__ == "__main__":
-    #param_combinations = [(v, c) for v in [50, 150, 500] for c in [3, 4, 5]]
-    param_combinations = [(50, 5)] + [(150, c) for c in [3, 4, 5]]
+    param_combinations = [(v, c) for v in [200] for c in [3, 4, 5]]
+    #param_combinations = [(150, 4)] + [(150, 500)]#+ [(150, 5)]
 
     with Pool() as pool:
         pool.starmap(parallel_main, param_combinations)
