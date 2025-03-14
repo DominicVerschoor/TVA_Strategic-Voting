@@ -4,7 +4,6 @@ import itertools
 from itertools import permutations
 import copy
 from collections import Counter
-from ATVA3 import atva3_pipeline
 
 # create class
 class Voter:
